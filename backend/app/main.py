@@ -75,6 +75,7 @@ def create_app(settings=None, integrations=None, clock=None):
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request, exc):
+        # 不把Pydantic原始input（可能含密码）返回前端。
         account_paths = ("/api/v1/auth/", "/api/v1/me", "/api/v1/notifications", "/api/v1/dict", "/api/v1/config")
         status = 400 if request.url.path.startswith(account_paths) else 422
         return failure(request,40001,"参数格式不正确，请检查邮箱、字段范围及必填项",status)
@@ -102,6 +103,7 @@ def create_app(settings=None, integrations=None, clock=None):
         except ApiError as exc:
             response = failure(request,exc.code,exc.message,exc.status)
         except Exception:
+            # 不输出请求体、参数或异常原文，避免日志泄露凭据。
             logging.getLogger("account").error("Unhandled server error, requestId=%s",request.state.request_id)
             response = failure(request,50001,"服务内部错误，请提供 requestId 排查",500)
         if request.url.path.startswith("/api/v1") and response.headers.get("content-type","").startswith("application/json"):
@@ -113,6 +115,7 @@ def create_app(settings=None, integrations=None, clock=None):
             payload["requestId"] = request.state.request_id
             headers = [(k,v) for k,v in response.raw_headers if k.lower() not in (b"content-length",b"content-type")]
             updated = JSONResponse(payload,status_code=response.status_code)
+            # 保留多个Set-Cookie及其他响应头，不能转换为字典后丢失重复头。
             updated.raw_headers.extend(headers)
             response = updated
             response.headers["Cache-Control"] = "no-store"
@@ -120,6 +123,7 @@ def create_app(settings=None, integrations=None, clock=None):
         response.headers["X-Content-Type-Options"] = "nosniff"
         return response
 
+    # 团队既有用户主页/关注兼容路由保留；账号负责 POST follow 和其余账号路径。
     app.include_router(api_router)
     app.include_router(router)
     if shared_settings.is_development:
@@ -148,6 +152,7 @@ def create_app(settings=None, integrations=None, clock=None):
             raise StarletteHTTPException(404)
         return FileResponse(ROOT / "account_lab.js",media_type="text/javascript")
 
+    # CORS最外层保证鉴权/校验错误同样能被允许的前端读取。
     app.add_middleware(CORSMiddleware,allow_origins=list(settings.allowed_origins),allow_credentials=True,
                        allow_methods=["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
                        allow_headers=["Authorization","Content-Type","X-Request-Id"],expose_headers=["X-Request-ID"])

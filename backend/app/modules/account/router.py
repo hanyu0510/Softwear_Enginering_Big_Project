@@ -50,7 +50,7 @@ def register(body: RegisterBody, request: Request, conn=Depends(get_connection))
 @router.post("/auth/login")
 def login(body: LoginBody, request: Request, response: Response, conn=Depends(get_connection)):
     user = conn.execute("SELECT * FROM users WHERE email=?", (body.email,)).fetchone()
-    encoded = user["password_hash"] if user else request.app.state.dummy_password_hash
+    encoded = (user["password_hash"] if user else None) or request.app.state.dummy_password_hash
     if not verify_password(body.password, encoded) or user is None:
         raise ApiError(40101, "邮箱或密码错误", 401)
     with transaction(conn):
@@ -181,6 +181,7 @@ def my_posts(request: Request, page: int = Page, pageSize: int = PageSize,
     return success(result)
 
 
+@router.put("/users/{user_id}/follow", include_in_schema=False)
 @router.post("/users/{user_id}/follow")
 @router.delete("/users/{user_id}/follow")
 def follow(user_id: str, request: Request, conn=Depends(get_connection), user=Depends(current_user)):
@@ -190,7 +191,7 @@ def follow(user_id: str, request: Request, conn=Depends(get_connection), user=De
             raise ApiError(40001, "不能关注自己")
         if conn.execute("SELECT id FROM users WHERE id=?", (user_id,)).fetchone() is None:
             raise ApiError(40401, "用户不存在", 404)
-        if request.method == "POST":
+        if request.method != "DELETE":
             event_id = new_id("follow")
             changed = conn.execute("INSERT OR IGNORE INTO follows VALUES (?,?,?)", (user["id"], user_id, iso_time(request.app.state.clock()))).rowcount
             if changed:
@@ -203,7 +204,7 @@ def follow(user_id: str, request: Request, conn=Depends(get_connection), user=De
             if changed:
                 conn.execute("UPDATE users SET following_count=following_count-1 WHERE id=?", (user["id"],))
                 conn.execute("UPDATE users SET follower_count=follower_count-1 WHERE id=?", (user_id,))
-    return success(message="已关注" if request.method == "POST" else "已取消关注")
+    return success(message="已关注" if request.method != "DELETE" else "已取消关注")
 
 
 @router.get("/me/following")
@@ -242,7 +243,7 @@ def notifications(request: Request, page: int = Page, pageSize: int = PageSize,
             data.pop("event_key")
             data["is_read"] = bool(data["is_read"])
             sender = conn.execute("SELECT * FROM users WHERE id=?", (row["from_user_id"],)).fetchone()
-            data["from_user"] = user_view(sender, private=False)
+            data["from_user"] = user_view(sender, private=False) if sender else None
             result.append(data)
     finally:
         conn.rollback()

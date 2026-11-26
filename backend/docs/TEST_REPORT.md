@@ -1,3 +1,15 @@
+# 2026-11-26 合并回归
+
+公共依赖保留 main 的 FastAPI 0.123.5 / SQLAlchemy 2.0.44 等版本，补充账号测试所需 httpx 0.28.1。
+
+执行：`python -m pytest tests/test_account.py tests/test_account_integration.py tests/test_wardrobe_api.py tests/test_feed.py -q`，89 项全部通过。
+
+新增跨模块回归验证：已有社区数据库的作者/帖子仍在；注册登录所得 token 可调用衣橱上传和衣物列表、社区关注流；PUT/DELETE 关注与账号计数一致；退出后两类接口均拒绝旧凭据。
+
+未运行浏览器端到端测试；头像和我的帖子列表适配器仍未接入。下方为初版账号测试记录。
+
+---
+
 # 本轮验证记录
 
 - 后端：Python 3.12 / FastAPI 0.141.1 / Pydantic 2.13.4 / Uvicorn 0.52.1。

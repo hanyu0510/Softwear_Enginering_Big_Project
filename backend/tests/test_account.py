@@ -8,7 +8,7 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from app.core.config import Settings
+from app.modules.account.settings import Settings
 from app.core.database import transaction
 from app.core.errors import ApiError
 from app.core.security import hash_token

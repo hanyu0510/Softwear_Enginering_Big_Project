@@ -296,3 +296,8 @@ SQLite 和 Python sqlite3 是本地运行适配，不改变 4.3 中数据库/ORM
 当前接入口为 `CommunityGateway.list_posts(conn, *, user_id, kind, page, page_size)`（kind为posts/likes/favorites，返回分页卡片）和 `UploadsGateway.resolve_avatar(conn, *, user_id, file_id)`（返回本人可用的头像URL）。类名、文件路径及数据库连接对象属于本地代码；最终内部命名随公共工程统一，对外HTTP路径和字段保持本文约定。
 
 验收页的“输入用户ID/通知ID”“手动刷新”等只方便开发测试，不是正式产品交互要求。正式前端应从列表数据取得这些ID后自动提交，不要求用户手输。
+
+
+## 公共应用合并补充（2026-11-26）
+
+账号已与 main 的衣橱和社区整合到单一 `app.main:app`，共用 DATABASE_URL。保留原作者和帖子并补齐账号列；旧演示作者不会自动获得邮箱、密码或会话。真实 token 可跨模块使用，关注写入兼容社区已有 PUT 方法，统一由账号维护计数。账号配置类移至 `app.modules.account.settings`，公共配置保持 `app.core.config.Settings`。头像关联和我的帖子列表查询仍待接入。合并回归 89 项通过，细节见 backend/docs/TEST_REPORT.md。
