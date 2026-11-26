@@ -38,13 +38,25 @@ def request_id(request: Request) -> str:
     return getattr(request.state, "request_id", f"req_{uuid4().hex[:12]}")
 
 
-def success(request: Request, data=None, message: str = "ok") -> dict:
-    return {
-        "code": 0,
-        "message": message,
-        "data": data,
+_UNSET = object()
+
+
+def success(request=None, data=_UNSET, message="ok") -> dict:
+    """兼容公共 success(request, data) 与账号 success(data)。"""
+    if isinstance(request, Request):
+        rid = request_id(request)
+        payload = None if data is _UNSET else data
+    else:
+        rid = ""
+        payload = request if data is _UNSET else data
+    return {"code": 0, "message": message, "data": payload, "requestId": rid}
+
+
+def failure(request, code, message, status):
+    return JSONResponse(status_code=status, content={
+        "code": code, "message": message, "data": None,
         "requestId": request_id(request),
-    }
+    })
 
 
 def install_exception_handlers(app: FastAPI) -> None:
@@ -62,11 +74,7 @@ def install_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def validation_error_handler(request: Request, exc: RequestValidationError):
-        details = exc.errors()[0] if exc.errors() else {}
-        location = ".".join(str(part) for part in details.get("loc", []) if part != "body")
-        message = details.get("msg", "参数无效")
-        if location:
-            message = f"{location}: {message}"
+        message = "参数格式不正确，请检查邮箱、字段范围及必填项"
         return JSONResponse(
             status_code=422,
             content={

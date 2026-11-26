@@ -6,7 +6,7 @@
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Body, Depends, Header, Query
+from fastapi import APIRouter, Body, Depends, Header, Query, Request
 
 from app.core.deps import get_db
 from app.core.errors import unauthorized
@@ -15,11 +15,11 @@ from app.modules.community import service
 router = APIRouter(tags=["community"])
 
 
-def optional_viewer(authorization: str | None = Header(default=None)) -> str | None:
+def optional_viewer(request: Request, authorization: str | None = Header(default=None)) -> str | None:
     """游客也能刷首页：统一走 core.deps 的可信认证，解析失败当未登录。"""
-    from app.core.deps import optional_user
+    from app.core.deps import optional_request_user
 
-    return optional_user(authorization)
+    return optional_request_user(request, authorization)
 
 
 def current_viewer(user_id: str | None = Depends(optional_viewer)) -> str | None:

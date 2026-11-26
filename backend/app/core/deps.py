@@ -13,6 +13,7 @@ from collections.abc import Generator
 import sqlite3
 
 from app.core.db import get_conn
+from fastapi import Request
 
 # 演示回退：账号模块未接入时的本地 token。正式接入后这段不再生效。
 _DEMO_TOKEN = "dev-me"
@@ -41,12 +42,33 @@ def verify_bearer(authorization: str | None):
     token = (authorization or "").strip()
     if token.lower().startswith("bearer "):
         token = token[7:].strip()
-    try:
-        from app.modules.account.deps import verify_bearer as account_verify_bearer
-    except ImportError:
-        # 账号模块尚未接入：演示回退
-        return DemoUser(_DEMO_USER_ID) if token == _DEMO_TOKEN else None
-    return account_verify_bearer(authorization)
+    from app.modules.account.service import require_identity
+    from app.core.errors import ApiError
+    import time
+    with get_conn() as conn:
+        if conn.execute("SELECT 1 FROM sqlite_master WHERE name='auth_sessions'").fetchone():
+            try:
+                user, _ = require_identity(conn, token, time.time())
+                return DemoUser(user["id"])
+            except ApiError:
+                return None
+    return DemoUser(_DEMO_USER_ID) if token == _DEMO_TOKEN else None
+
+
+def optional_request_user(request: Request, authorization: str | None) -> str | None:
+    from app.modules.account.service import require_identity
+    from app.core.errors import ApiError
+    token = (authorization or "").split()
+    if len(token) != 2 or token[0].lower() != "bearer":
+        return None
+    with request.app.state.database.connection() as conn:
+        try:
+            user, _ = require_identity(conn, token[1], request.app.state.clock())
+            return user["id"]
+        except ApiError as exc:
+            if exc.status != 401:
+                raise
+    return None
 
 
 def optional_user(authorization: str | None = None) -> str | None:
