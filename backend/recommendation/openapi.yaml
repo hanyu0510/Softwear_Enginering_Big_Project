@@ -1,0 +1,108 @@
+openapi: 3.0.3
+info:
+  title: YIDA Recommendation Module
+  version: 0.1.0
+  description: 正式开发契约的推荐模块独立联调接口。响应统一为数字 code 信封。
+servers:
+  - url: http://127.0.0.1:8010/api/v1
+security:
+  - bearerAuth: []
+paths:
+  /cities:
+    get:
+      summary: 搜索城市
+      parameters:
+        - {name: keyword, in: query, schema: {type: string}}
+        - {name: country, in: query, schema: {type: string}}
+      responses:
+        '200': {description: 城市数组, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+  /weather:
+    get:
+      summary: 查询指定城市与日期的天气
+      parameters:
+        - {name: cityId, in: query, required: true, schema: {type: string}}
+        - {name: date, in: query, required: true, schema: {type: string, format: date}}
+      responses:
+        '200': {description: 天气结构, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+        '503': {description: 50301 天气不可用或超出预报范围}
+  /recommend/scene-parse:
+    post:
+      summary: 解析场景及风格
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ParseRequest'}}}}
+      responses:
+        '200': {description: 固定解析结构, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+  /recommendations:
+    post:
+      summary: 生成穿搭
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RecommendationRequest'}}}}
+      responses:
+        '201': {description: 推荐结果, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+    get:
+      summary: 历史推荐
+      parameters:
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: pageSize, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        '200': {description: 本人历史列表, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+  /recommendations/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string}}
+    get:
+      summary: 推荐详情
+      responses:
+        '200': {description: 本人推荐详情, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+        '404': {description: 不存在或不可见}
+  /recommendations/{id}/regenerate:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string}}
+    post:
+      summary: 锁定单品并生成新方案
+      requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {locked_items: {type: array, items: {$ref: '#/components/schemas/LockedItem'}}}}}}}
+      responses:
+        '201': {description: 新推荐, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+  /recommendations/{id}/feedback:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string}}
+    put:
+      summary: 提交或覆盖反馈
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [preference], properties: {preference: {type: string, enum: [like, dislike]}, reason: {type: string}}}}}}
+      responses:
+        '200': {description: 反馈记录, content: {application/json: {schema: {$ref: '#/components/schemas/Envelope'}}}}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer}
+  schemas:
+    Envelope:
+      type: object
+      required: [code, message, data, requestId]
+      properties:
+        code: {type: integer, description: 0 表示成功}
+        message: {type: string}
+        data: {nullable: true}
+        requestId: {type: string}
+    ParseRequest:
+      type: object
+      properties:
+        sceneText: {type: string, maxLength: 300}
+        styleText: {type: string, maxLength: 300}
+    LockedItem:
+      type: object
+      required: [source, id]
+      properties:
+        source: {type: string, enum: [owned, wish]}
+        id: {type: string}
+    RecommendationRequest:
+      allOf:
+        - $ref: '#/components/schemas/ParseRequest'
+        - type: object
+          properties:
+            destination:
+              type: object
+              required: [cityId]
+              properties:
+                cityId: {type: string}
+                cityName: {type: string}
+            travelDate: {type: string, format: date}
+            date: {type: string, format: date}
+            wardrobeScope: {type: string, enum: [owned, owned_and_wish], default: owned}
+            locked_items: {type: array, maxItems: 5, items: {$ref: '#/components/schemas/LockedItem'}}

@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>衣搭 YIDA · 推荐联调台</title>
+  <style>
+    :root { color-scheme: light; --ink:#23332c; --muted:#687970; --line:#dce7df; --bg:#f3f7f2; --card:#fff; --green:#276448; --lime:#d9efd2; --orange:#a65329; --shadow:0 12px 34px rgba(31,70,47,.07); }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui,-apple-system,"Microsoft YaHei",sans-serif; }
+    button,input,select,textarea { font:inherit; }
+    button { cursor:pointer; }
+    .shell { max-width:1250px; margin:auto; padding:28px 22px 60px; }
+    header { display:flex; align-items:end; justify-content:space-between; gap:18px; margin-bottom:23px; }
+    .eyebrow { color:var(--green); font-size:12px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+    h1 { margin:4px 0 5px; font-size:clamp(26px,4vw,39px); letter-spacing:-.04em; line-height:1.2; }
+    header p { margin:0; color:var(--muted); }
+    .mode { background:#e4f2df; color:#285b3c; border:1px solid #c9e4c4; border-radius:999px; padding:7px 13px; font-size:12px; font-weight:800; white-space:nowrap; }
+    .layout { display:grid; grid-template-columns:minmax(330px,420px) minmax(0,1fr); gap:18px; align-items:start; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:19px; box-shadow:var(--shadow); padding:22px; }
+    .card + .card { margin-top:18px; }
+    h2 { font-size:18px; margin:0 0 15px; letter-spacing:-.02em; }
+    h3 { margin:0 0 9px; font-size:15px; }
+    .muted { color:var(--muted); }
+    .small { font-size:12px; }
+    label { display:block; font-size:13px; font-weight:700; margin:13px 0 6px; }
+    input[type=text], input[type=date], select, textarea { width:100%; border:1px solid #cddbd0; border-radius:10px; background:#fff; color:var(--ink); padding:10px 12px; outline:none; }
+    input:focus,select:focus,textarea:focus { border-color:#599b72; box-shadow:0 0 0 3px #dcefe0; }
+    textarea { min-height:78px; resize:vertical; }
+    .row { display:flex; gap:9px; align-items:center; }
+    .row > input { flex:1; }
+    .checks { display:flex; align-items:center; gap:10px; margin:15px 0 4px; font-size:13px; font-weight:700; }
+    .checks input { width:17px; height:17px; accent-color:var(--green); }
+    .hint { font-size:12px; color:var(--muted); margin:6px 0 0; }
+    .chips { display:flex; gap:7px; flex-wrap:wrap; margin-top:9px; }
+    .chip { border:1px solid #d4e3d6; background:#f7faf7; color:#345541; padding:5px 10px; border-radius:999px; font-size:12px; }
+    .chip:hover { background:#e9f5e8; }
+    .btn { border:1px solid #bad2c0; background:#fff; color:var(--green); border-radius:10px; padding:10px 14px; font-weight:800; }
+    .btn:hover { background:#f2faf1; }
+    .btn.primary { background:var(--green); border-color:var(--green); color:#fff; }
+    .btn.primary:hover { background:#1b5238; }
+    .btn:disabled { cursor:wait; opacity:.55; }
+    .actions { display:flex; flex-wrap:wrap; gap:9px; margin-top:20px; }
+    .actions .primary { flex:1; }
+    .divide { border:0; border-top:1px solid var(--line); margin:20px 0; }
+    .location { background:#f2f8f1; border:1px solid #d6e9d4; border-radius:11px; padding:9px 11px; color:#31583f; font-size:13px; margin-top:9px; }
+    .city-list { display:grid; gap:6px; max-height:160px; overflow:auto; margin-top:8px; }
+    .city-list button { border:1px solid var(--line); background:#fff; text-align:left; border-radius:9px; padding:8px 10px; }
+    .city-list button:hover { border-color:#83b491; background:#f5fbf4; }
+    .notice { border-radius:11px; padding:11px 13px; margin-bottom:17px; font-size:13px; display:none; }
+    .notice.show { display:block; }
+    .notice.ok { background:#e5f4e4; color:#285f3c; border:1px solid #c5e5c8; }
+    .notice.error { background:#fff0e7; color:#8a3e1c; border:1px solid #f5d2bd; }
+    .empty { min-height:300px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; color:var(--muted); border:1px dashed #cdddcf; border-radius:14px; background:#fbfdfb; padding:28px; }
+    .empty .art { font-size:48px; margin-bottom:8px; }
+    .result-head { display:flex; justify-content:space-between; gap:10px; align-items:start; }
+    .result-head h2 { margin-bottom:4px; }
+    .badge { border-radius:999px; padding:5px 9px; font-size:11px; font-weight:800; background:#e4f2df; color:#2f6544; white-space:nowrap; }
+    .badge.mock { background:#fff1df; color:#945a20; }
+    .item-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin:16px 0; }
+    .item { background:#fafcf9; border:1px solid #dfe9df; border-radius:12px; padding:13px; min-height:122px; }
+    .item .icon { font-size:22px; display:inline-flex; width:36px; height:36px; align-items:center; justify-content:center; background:#e7f3e5; border-radius:9px; }
+    .item .photo { width:100%; height:160px; display:block; object-fit:contain; background:#eef2ee; border-radius:8px; }
+    .item strong { display:block; margin:8px 0 3px; line-height:1.35; }
+    .item .meta { color:var(--muted); font-size:11px; overflow-wrap:anywhere; }
+    .item .lock { display:flex; align-items:center; gap:5px; margin:8px 0 0; font-weight:600; font-size:12px; }
+    .item .lock input { accent-color:var(--green); }
+    .item.wish { border-color:#eacb9f; background:#fffaf2; }
+    .item.unavailable { opacity:.58; }
+    .info-box { background:#f6faf5; border-radius:12px; padding:13px 15px; margin:13px 0; }
+    .info-box p { margin:0; }
+    .tags { display:flex; gap:6px; flex-wrap:wrap; }
+    .tag { border-radius:6px; padding:4px 7px; background:#edf4ec; color:#365846; font-size:11px; }
+    .tag.warn { background:#fff0dd; color:#895023; }
+    .weather { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+    .weather > div { background:#f5f9f5; border-radius:10px; padding:9px; }
+    .weather strong { display:block; font-size:16px; }
+    .weather span { font-size:11px; color:var(--muted); }
+    .toolbar { display:flex; flex-wrap:wrap; gap:9px; margin-top:15px; align-items:center; }
+    .toolbar input { max-width:245px; }
+    .history-list { display:grid; gap:8px; }
+    .history-row { width:100%; text-align:left; border:1px solid var(--line); background:#fff; border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; gap:12px; align-items:center; }
+    .history-row:hover { background:#f3faf3; border-color:#8fb99a; }
+    .history-row strong { display:block; font-size:13px; }
+    .history-row span { display:block; color:var(--muted); font-size:11px; }
+    pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:11px; background:#f4f7f4; border-radius:10px; padding:13px; max-height:260px; overflow:auto; }
+    details { margin-top:14px; }
+    summary { cursor:pointer; font-size:13px; color:var(--muted); }
+    @media (max-width:900px) { .layout { grid-template-columns:1fr; } header { align-items:start; } }
+    @media (max-width:560px) { .shell { padding:18px 12px 40px; } .card { padding:17px; } header { flex-direction:column; } .weather { grid-template-columns:1fr 1fr; } }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div>
+      <div class="eyebrow">YIDA / BACKEND PLAYGROUND</div>
+      <h1>穿搭推荐联调台</h1>
+      <p>输入需求，直接试运行后端推荐流程与八个接口。</p>
+    </div>
+    <span class="mode">● %DEMO_MODE%</span>
+  </header>
+  <div id="notice" class="notice" role="status" aria-live="polite"></div>
+  <div class="layout">
+    <main>
+      <section class="card">
+        <h2>01 · 你的需求</h2>
+        <label for="token">测试账号 Token</label>
+        <select id="token">
+          <option value="mock-token-u1">模拟用户 1（完整衣橱）</option>
+          <option value="mock-token-u2">模拟用户 2（少量衣物）</option>
+        </select>
+        <p class="hint">%DEMO_NOTE%</p>
+        <label for="sceneText">今天要去哪里 / 做什么</label>
+        <textarea id="sceneText" maxlength="300" placeholder="例如：去公园野餐，可能会拍照">去公园野餐，可能会拍照</textarea>
+        <div class="chips" id="sceneChips">
+          <button type="button" class="chip" data-value="去咖啡馆拍照">咖啡馆</button>
+          <button type="button" class="chip" data-value="周末去公园野餐拍照">公园野餐</button>
+          <button type="button" class="chip" data-value="今天有一场正式面试">正式面试</button>
+          <button type="button" class="chip" data-value="今天在城市里走很多路">城市步行</button>
+        </div>
+        <label for="styleText">想要的风格</label>
+        <input id="styleText" type="text" maxlength="300" placeholder="例如：美拉德、Y2K、老钱风" value="美拉德">
+        <div class="chips" id="styleChips">
+          <button type="button" class="chip" data-value="美拉德">美拉德</button>
+          <button type="button" class="chip" data-value="Y2K">Y2K</button>
+          <button type="button" class="chip" data-value="多巴胺">多巴胺</button>
+          <button type="button" class="chip" data-value="极简冷淡风">极简冷淡风</button>
+        </div>
+        <hr class="divide">
+        <label class="checks"><input id="travel" type="checkbox"> 我要去其他城市旅行</label>
+        <div id="travelFields" hidden>
+          <label for="cityKeyword">搜索目的地</label>
+          <div class="row">
+            <input id="cityKeyword" type="text" value="苏州" placeholder="城市中文或英文名">
+            <button class="btn" id="searchCity" type="button">搜索</button>
+          </div>
+          <div id="cityResults" class="city-list" aria-live="polite"></div>
+          <div id="selectedCity" class="location">尚未选择目的地</div>
+          <label for="travelDate">出行日期</label>
+          <input id="travelDate" type="date">
+          <p class="hint">超过预报范围时仍可生成参考搭配，天气会标为不可用。</p>
+        </div>
+        <label for="scope">衣橱范围</label>
+        <select id="scope">
+          <option value="owned">仅已有衣物</option>
+          <option value="owned_and_wish">已有衣物 + 有效心愿单品</option>
+        </select>
+        <div class="actions">
+          <button id="preview" class="btn" type="button">预览场景解析</button>
+          <button id="generate" class="btn primary" type="button">生成穿搭 →</button>
+        </div>
+      </section>
+      <section class="card">
+        <h2>02 · 城市与天气接口</h2>
+        <p class="muted small">天气查询使用已选目的地；本地模式可输入一个城市 ID 做独立接口测试。</p>
+        <label for="weatherCity">城市 ID</label>
+        <input id="weatherCity" type="text" value="city_suzhou">
+        <label for="weatherDate">日期</label>
+        <input id="weatherDate" type="date">
+        <div class="actions"><button id="checkWeather" class="btn" type="button">查询天气</button></div>
+        <div id="weatherPreview" class="hint">天气接口结果会显示在这里。</div>
+      </section>
+    </main>
+    <aside>
+      <section class="card">
+        <div class="result-head">
+          <div><h2>推荐结果</h2><div class="muted small" id="resultId">等待生成</div></div>
+          <span class="badge" id="modelStatus">未运行</span>
+        </div>
+        <div id="result" class="empty"><div class="art">👕</div><strong>从衣橱里选一套</strong><p>填写左侧需求并点击“生成穿搭”。</p></div>
+        <div id="resultActions" class="toolbar" hidden>
+          <button id="regenerate" class="btn primary" type="button">保留勾选单品，换一套</button>
+          <button id="like" class="btn" type="button">👍 喜欢</button>
+          <button id="dislike" class="btn" type="button">👎 不喜欢</button>
+          <input id="feedbackReason" type="text" maxlength="300" placeholder="反馈原因（可选）">
+        </div>
+        <details><summary>查看本次接口原始 JSON</summary><pre id="rawJson">尚无请求</pre></details>
+      </section>
+      <section class="card">
+        <div class="result-head"><h2>最近生成记录</h2><button id="refreshHistory" class="btn" type="button">刷新</button></div>
+        <div id="history" class="history-list"><span class="muted small">尚未加载</span></div>
+      </section>
+    </aside>
+  </div>
+</div>
+<script>
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const state = { city: null, result: null };
+  const icons = {tops:"👕", bottoms:"👖", outerwear:"🧥", dress:"👗", shoes:"👟", bag:"👜", accessory:"⌚", other:"◈"};
+  const labels = {tops:"上装", bottoms:"下装", outerwear:"外套", dress:"连衣裙", shoes:"鞋", bag:"包", accessory:"配饰", other:"其他"};
+  const sceneLabels = {commute:"通勤", date:"约会", travel:"旅行", casual:"日常", formal:"正式", party:"聚会", sport:"运动"};
+  const make = (tag, cls, value) => {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (value !== undefined) node.textContent = String(value);
+    return node;
+  };
+  const add = (parent, child) => { parent.appendChild(child); return child; };
+  function chinaToday() {
+    const parts = new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Shanghai", year:"numeric", month:"2-digit", day:"2-digit"}).formatToParts(new Date());
+    const get = (type) => parts.find((x) => x.type === type).value;
+    return get("year") + "-" + get("month") + "-" + get("day");
+  }
+  function notice(message, error=false) {
+    const node = $("notice");
+    node.textContent = message;
+    node.className = "notice show " + (error ? "error" : "ok");
+  }
+  async function api(path, method="GET", body) {
+    const opts = {method, headers:{"Authorization":"Bearer " + $("token").value}};
+    if (body !== undefined) {
+      opts.headers["Content-Type"] = "application/json";
+      opts.body = JSON.stringify(body);
+    }
+    const response = await fetch("/api/v1" + path, opts);
+    let envelope;
+    try { envelope = await response.json(); }
+    catch (_) { throw new Error("服务未返回 JSON（HTTP " + response.status + "）"); }
+    if (!response.ok || envelope.code !== 0) {
+      throw new Error((envelope.message || "请求失败") + " · code " + envelope.code + " · " + (envelope.requestId || ""));
+    }
+    return envelope.data;
+  }
+  async function run(button, action) {
+    button.disabled = true;
+    try { await action(); }
+    catch (error) { notice(error.message || String(error), true); }
+    finally { button.disabled = false; }
+  }
+  function selectedLocks() {
+    return [...document.querySelectorAll(".lock input:checked")].map((input) => ({
+      source:input.dataset.source, id:input.dataset.id
+    }));
+  }
+  function payload() {
+    const request = {
+      sceneText:$("sceneText").value.trim(),
+      styleText:$("styleText").value.trim(),
+      wardrobeScope:$("scope").value,
+      locked_items:selectedLocks()
+    };
+    if ($("travel").checked) {
+      if (!state.city) throw new Error("请先搜索并选择旅行目的地");
+      if (!$("travelDate").value) throw new Error("请选择出行日期");
+      request.destination = {cityId:state.city.cityId};
+      request.travelDate = $("travelDate").value;
+    }
+    return request;
+  }
+  function renderParsed(data) {
+    const box = make("div", "info-box");
+    add(box, make("h3", "", "场景理解"));
+    const scene = data.scene ? (sceneLabels[data.scene] || data.scene) : "未确定";
+    add(box, make("p", "small", scene + " · " + (data.style_note || "未提供描述")));
+    const tags = add(box, make("div", "tags"));
+    tags.style.marginTop = "8px";
+    for (const tag of data.style_tags || []) add(tags, make("span", "tag", tag));
+    for (const color of data.color_family || []) add(tags, make("span", "tag", color));
+    if ((data.low_confidence_fields || []).length) {
+      add(tags, make("span", "tag warn", "待确认：" + data.low_confidence_fields.join("、")));
+    }
+    return box;
+  }
+  function renderWeather(data) {
+    const wrap = make("div", "weather");
+    for (const [title, value] of [
+      ["城市", data.cityName || data.cityId],
+      ["温度", data.temperatureMinC + "～" + data.temperatureMaxC + "℃"],
+      ["降雨概率", data.rainProbability == null ? "未知" : data.rainProbability + "%"]
+    ]) {
+      const cell = add(wrap, make("div"));
+      add(cell, make("strong", "", value));
+      add(cell, make("span", "", title));
+    }
+    return wrap;
+  }
+  function renderResult(data) {
+    state.result = data;
+    $("resultId").textContent = data.id || "仅解析预览";
+    $("modelStatus").textContent = data.modelStatus === "generated" ? "模型精排" : data.modelStatus === "rule_based" ? "规则推荐" : "解析预览";
+    $("modelStatus").className = "badge" + (data.modelStatus === "rule_based" ? " mock" : "");
+    const root = $("result");
+    root.className = "";
+    root.replaceChildren();
+    if (data.parsed) add(root, renderParsed(data.parsed));
+    if (data.items) {
+      if (data.items.length) {
+        const grid = add(root, make("div", "item-grid"));
+        for (const item of data.items) {
+          const card = add(grid, make("div", "item" + (item.source === "wish" ? " wish" : "") + (item.available === false ? " unavailable" : "")));
+          const cat = Object.keys(icons).find((key) => String(item.name || "").includes(key)) || "other";
+          if (String(item.id || "").startsWith("catalog_") && item.imageUrl) {
+            const picture = add(card, make("img", "photo"));
+            picture.src = item.imageUrl;
+            picture.alt = item.name || "商品样本";
+            picture.loading = "lazy";
+          } else {
+            add(card, make("span", "icon", icons[cat] || icons.other));
+          }
+          add(card, make("strong", "", item.name || "未命名单品"));
+          add(card, make("div", "meta", (item.source === "wish" ? "心愿 · 尚未拥有" : "已有衣物") + (item.available === false ? " · 已失效" : "") + " · " + item.id));
+          if (data.modelStatus) {
+            const label = add(card, make("label", "lock"));
+            const input = add(label, document.createElement("input"));
+            input.type = "checkbox";
+            input.dataset.source = item.source;
+            input.dataset.id = item.id;
+            add(label, make("span", "", "换一套时保留"));
+          }
+        }
+      } else {
+        add(root, make("div", "info-box", "当前没有可用于推荐的已确认衣物。可切换模拟用户或先在团队衣橱模块添加衣物。"));
+      }
+    }
+    if (data.reason) {
+      const box = add(root, make("div", "info-box"));
+      add(box, make("h3", "", "推荐理由"));
+      add(box, make("p", "", data.reason));
+    }
+    if (data.weather) {
+      add(root, make("h3", "", "天气依据"));
+      add(root, renderWeather(data.weather));
+      add(root, make("p", "hint", data.weather.source + " · " + data.weather.date + " · " + (data.weather.forecast ? "预报" : "实况")));
+    } else if (data.modelStatus) {
+      add(root, make("p", "hint", "本次没有可用天气数据，搭配仅供参考。"));
+    }
+    for (const [title, list, cls] of [
+      ["注意事项", data.warnings || [], "warn"],
+      ["出行建议", data.local_tips || [], ""]
+    ]) {
+      if (list.length) {
+        add(root, make("h3", "", title));
+        const tags = add(root, make("div", "tags"));
+        for (const value of list) add(tags, make("span", "tag " + cls, value));
+      }
+    }
+    $("resultActions").hidden = !data.id;
+    $("rawJson").textContent = JSON.stringify(data, null, 2);
+  }
+  function renderHistory(data) {
+    const root = $("history");
+    root.replaceChildren();
+    if (!data.list || !data.list.length) {
+      add(root, make("span", "muted small", "还没有生成记录。"));
+      return;
+    }
+    for (const item of data.list.slice(0, 8)) {
+      const row = add(root, make("button", "history-row"));
+      row.type = "button";
+      const left = add(row, make("div"));
+      add(left, make("strong", "", item.sceneText || item.styleText || "日常穿搭"));
+      add(left, make("span", "", item.id + " · " + (item.items || []).length + " 件"));
+      add(row, make("span", "", item.createdAt ? item.createdAt.slice(0, 16).replace("T", " ") : ""));
+      row.addEventListener("click", () => run(row, async () => {
+        const detail = await api("/recommendations/" + encodeURIComponent(item.id));
+        renderResult(detail);
+        notice("已打开历史推荐 " + item.id);
+      }));
+    }
+  }
+  async function refreshHistory() {
+    const data = await api("/recommendations?page=1&pageSize=8");
+    renderHistory(data);
+  }
+  $("travel").addEventListener("change", () => { $("travelFields").hidden = !$("travel").checked; });
+  $("sceneChips").addEventListener("click", (event) => {
+    if (event.target.dataset.value) $("sceneText").value = event.target.dataset.value;
+  });
+  $("styleChips").addEventListener("click", (event) => {
+    if (event.target.dataset.value) $("styleText").value = event.target.dataset.value;
+  });
+  $("token").addEventListener("change", () => {
+    state.result = null;
+    $("result").className = "empty";
+    $("result").replaceChildren(make("p", "", "已切换测试账号，点击“生成穿搭”。"));
+    $("resultId").textContent = "等待生成";
+    $("resultActions").hidden = true;
+    $("weatherCity").value = $("token").value === "mock-token-u2" ? "city_beijing" : "city_suzhou";
+    run($("refreshHistory"), refreshHistory);
+  });
+  $("searchCity").addEventListener("click", () => run($("searchCity"), async () => {
+    const keyword = $("cityKeyword").value.trim();
+    if (!keyword) throw new Error("请输入城市名称");
+    const cities = await api("/cities?keyword=" + encodeURIComponent(keyword));
+    const root = $("cityResults");
+    root.replaceChildren();
+    if (!cities.length) { add(root, make("span", "muted small", "没有找到城市，请换个关键词。")); return; }
+    for (const city of cities) {
+      const button = add(root, make("button", "", city.cityName + " · " + city.region + " · " + city.country));
+      button.type = "button";
+      button.addEventListener("click", () => {
+        state.city = city;
+        $("selectedCity").textContent = "已选：" + city.cityName + " / " + city.region + " / " + city.country + " · " + city.cityId;
+        $("weatherCity").value = city.cityId;
+        root.replaceChildren();
+      });
+    }
+    notice("找到 " + cities.length + " 个城市，请选择一个。");
+  }));
+  $("preview").addEventListener("click", () => run($("preview"), async () => {
+    const parsed = await api("/recommend/scene-parse", "POST", {
+      sceneText:$("sceneText").value.trim(), styleText:$("styleText").value.trim()
+    });
+    renderResult({parsed});
+    notice("场景解析完成；尚未生成衣物搭配。");
+  }));
+  $("generate").addEventListener("click", () => run($("generate"), async () => {
+    const data = await api("/recommendations", "POST", payload());
+    renderResult(data);
+    await refreshHistory();
+    notice("已生成推荐 " + data.id);
+  }));
+  $("regenerate").addEventListener("click", () => run($("regenerate"), async () => {
+    if (!state.result || !state.result.id) throw new Error("请先生成一套搭配");
+    const data = await api("/recommendations/" + encodeURIComponent(state.result.id) + "/regenerate", "POST", {
+      locked_items:selectedLocks()
+    });
+    renderResult(data);
+    await refreshHistory();
+    notice("已生成新搭配 " + data.id);
+  }));
+  async function submitFeedback(button, preference) {
+    await run(button, async () => {
+      if (!state.result || !state.result.id) throw new Error("请先生成一套搭配");
+      await api("/recommendations/" + encodeURIComponent(state.result.id) + "/feedback", "PUT", {
+        preference, reason:$("feedbackReason").value.trim()
+      });
+      notice(preference === "like" ? "已记录喜欢。" : "已记录不喜欢。");
+    });
+  }
+  $("like").addEventListener("click", () => submitFeedback($("like"), "like"));
+  $("dislike").addEventListener("click", () => submitFeedback($("dislike"), "dislike"));
+  $("refreshHistory").addEventListener("click", () => run($("refreshHistory"), refreshHistory));
+  $("checkWeather").addEventListener("click", () => run($("checkWeather"), async () => {
+    const city = $("weatherCity").value.trim();
+    const date = $("weatherDate").value;
+    if (!city || !date) throw new Error("请填写城市 ID 和日期");
+    const data = await api("/weather?cityId=" + encodeURIComponent(city) + "&date=" + encodeURIComponent(date));
+    $("weatherPreview").replaceChildren(renderWeather(data), make("p", "hint", data.source + " · " + data.date));
+    notice("天气接口查询完成。");
+  }));
+  $("travelDate").value = chinaToday();
+  $("weatherDate").value = chinaToday();
+  run($("refreshHistory"), refreshHistory);
+</script>
+</body>
+</html>

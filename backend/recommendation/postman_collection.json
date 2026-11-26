@@ -1,0 +1,15 @@
+{
+  "info": {"name": "YIDA Recommendation Mock API", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+  "variable": [{"key": "baseUrl", "value": "http://127.0.0.1:8010/api/v1"}, {"key": "token", "value": "mock-token-u1"}, {"key": "recId", "value": ""}],
+  "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+  "item": [
+    {"name": "Search cities", "request": {"method": "GET", "url": "{{baseUrl}}/cities?keyword=苏州"}},
+    {"name": "Get weather", "request": {"method": "GET", "url": "{{baseUrl}}/weather?cityId=city_suzhou&date=2026-11-24"}},
+    {"name": "Parse scene and style", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"sceneText\":\"公园野餐拍照\",\"styleText\":\"美拉德\"}"}, "url": "{{baseUrl}}/recommend/scene-parse"}},
+    {"name": "Create recommendation", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"sceneText\":\"公园野餐拍照\",\"styleText\":\"美拉德\",\"wardrobeScope\":\"owned\"}"}, "url": "{{baseUrl}}/recommendations"}, "event": [{"listen": "test", "script": {"exec": ["if (pm.response.code === 201) pm.collectionVariables.set('recId', pm.response.json().data.id);"]}}]},
+    {"name": "Get recommendation", "request": {"method": "GET", "url": "{{baseUrl}}/recommendations/{{recId}}"}},
+    {"name": "List recommendations", "request": {"method": "GET", "url": "{{baseUrl}}/recommendations?page=1&pageSize=20"}},
+    {"name": "Regenerate", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"locked_items\":[]}"}, "url": "{{baseUrl}}/recommendations/{{recId}}/regenerate"}},
+    {"name": "Feedback", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"preference\":\"like\",\"reason\":\"喜欢配色\"}"}, "url": "{{baseUrl}}/recommendations/{{recId}}/feedback"}}
+  ]
+}
