@@ -1,29 +1,70 @@
 # -*- coding: utf-8 -*-
-"""数据库连接。正式工程由数据库负责人提供 session 依赖，这里保持同样的使用方式：
+"""全后端共用的 SQLite 数据库入口。
 
-    with get_conn() as conn:
-        ...
+衣橱模块使用 SQLAlchemy Session，社区模块暂时使用 sqlite3 Connection。
+两种访问方式默认指向同一个数据库文件，后续由数据库负责人统一迁移。
 """
 from __future__ import annotations
 
-import os
 import sqlite3
+from collections.abc import Generator
 from contextlib import contextmanager
+from pathlib import Path
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DEFAULT_DB = os.path.join(BASE_DIR, "data", "app.db")
-SCHEMA = os.path.join(BASE_DIR, "sql", "schema.sql")
+from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+
+from app.core.config import BACKEND_DIR, get_settings
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+def _make_engine(database_url: str):
+    connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
+    return create_engine(database_url, connect_args=connect_args)
+
+
+engine = _make_engine(get_settings().database_url)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+
+
+def get_db() -> Generator[Session, None, None]:
+    """SQLAlchemy 会话依赖，供衣橱等 ORM 模块使用。"""
+    with SessionLocal() as session:
+        yield session
+
+
+def create_tables() -> None:
+    Base.metadata.create_all(bind=engine)
+
+
+def _default_sqlite_path() -> Path:
+    url = make_url(get_settings().database_url)
+    if url.get_backend_name() != "sqlite" or not url.database:
+        return BACKEND_DIR / "data" / "yida.db"
+    path = Path(url.database)
+    return path if path.is_absolute() else BACKEND_DIR / path
+
+
+DEFAULT_DB = _default_sqlite_path()
+SCHEMA = BACKEND_DIR / "sql" / "schema.sql"
 
 
 def db_path() -> str:
-    return os.environ.get("APP_DB", DEFAULT_DB)
+    """兼容社区演示的 APP_DB，同时默认使用公共 DATABASE_URL。"""
+    import os
+
+    return os.environ.get("APP_DB", str(DEFAULT_DB))
 
 
 def connect(path: str | None = None) -> sqlite3.Connection:
-    p = path or db_path()
-    os.makedirs(os.path.dirname(p), exist_ok=True)
+    p = Path(path or db_path())
+    p.parent.mkdir(parents=True, exist_ok=True)
     # isolation_level=None：关掉隐式事务，事务边界自己写，避免 BEGIN 嵌套报错
-    conn = sqlite3.connect(p, isolation_level=None, check_same_thread=False)
+    conn = sqlite3.connect(str(p), isolation_level=None, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
@@ -40,5 +81,5 @@ def get_conn(path: str | None = None):
 
 
 def init_db(conn: sqlite3.Connection) -> None:
-    with open(SCHEMA, "r", encoding="utf-8") as f:
+    with SCHEMA.open("r", encoding="utf-8") as f:
         conn.executescript(f.read())

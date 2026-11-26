@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>衣搭 · 衣橱接口调试台</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/debug-assets/wardrobe.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">YIDA DEVELOPMENT CONSOLE</p>
+        <h1>衣橱接口调试台</h1>
+        <p class="subtitle">上传、手动新增、识别确认、权限隔离与心愿衣橱，一页完成联调。</p>
+      </div>
+      <div class="status-block">
+        <span id="healthDot" class="dot" aria-hidden="true"></span>
+        <span id="healthText">尚未连接</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="connection panel" aria-labelledby="connectionTitle">
+        <div class="section-heading">
+          <div><span>01</span><h2 id="connectionTitle">连接与身份</h2></div>
+          <button id="healthBtn" class="button secondary" type="button">检查服务</button>
+        </div>
+        <div class="form-grid connection-grid">
+          <label>API 地址<input id="baseUrl" value="http://127.0.0.1:8000" /></label>
+          <label>调试用户 ID<input id="userId" value="user_a" maxlength="64" /></label>
+          <label>Bearer Token<input id="token" value="dev:user_a" /></label>
+          <button id="applyIdentity" class="button primary" type="button">应用身份</button>
+        </div>
+        <p class="hint">切换为 <code>user_b</code> 可以验证私密衣物和修改权限是否隔离。开发 Token 仅在 development 环境有效。</p>
+      </section>
+
+      <div class="workspace-grid">
+        <div class="workspace-main">
+          <section class="panel" aria-labelledby="uploadTitle">
+            <div class="section-heading"><div><span>02</span><h2 id="uploadTitle">图片与识别</h2></div></div>
+            <div class="upload-zone">
+              <input id="imageInput" type="file" accept="image/jpeg,image/png,image/webp" />
+              <div id="localPreview" class="preview"><span>选择一张衣物图片</span></div>
+              <div class="upload-actions">
+                <button id="uploadBtn" class="button primary" type="button">上传图片</button>
+                <button id="recognizeBtn" class="button secondary" type="button" disabled>AI 识别</button>
+              </div>
+              <label>当前 fileId<input id="fileId" placeholder="上传后自动填写，也可粘贴" /></label>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="createTitle">
+            <div class="section-heading"><div><span>03</span><h2 id="createTitle">手动新增衣物</h2></div></div>
+            <form id="createForm" class="form-grid">
+              <label>名称<input name="name" value="米白针织衫" required maxlength="120" /></label>
+              <label>类别<select name="category" required></select></label>
+              <label>颜色<input name="color" value="米白" maxlength="32" /></label>
+              <label>保暖度<select name="warmth"><option value="">未填写</option><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select></label>
+              <label>季节<select name="season" multiple></select></label>
+              <label>风格<select name="style" multiple></select></label>
+              <label>场合<select name="occasion" multiple></select></label>
+              <label>可见性<select name="visibility"><option value="private">私密</option><option value="public">公开</option></select></label>
+              <button class="button primary form-submit" type="submit">保存为已确认衣物</button>
+            </form>
+          </section>
+
+          <section class="panel" aria-labelledby="itemsTitle">
+            <div class="section-heading">
+              <div><span>04</span><h2 id="itemsTitle">我的衣橱</h2></div>
+              <button id="loadItemsBtn" class="button secondary" type="button">刷新列表</button>
+            </div>
+            <form id="filterForm" class="filters">
+              <select name="category"><option value="">全部类别</option></select>
+              <select name="season"><option value="">全部季节</option></select>
+              <input name="color" placeholder="颜色" />
+              <input name="keyword" placeholder="名称关键词" />
+              <label class="compact-label">页码<input name="page" type="number" value="1" min="1" /></label>
+              <label class="compact-label">每页<select name="pageSize"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option></select></label>
+              <button class="button secondary" type="submit">筛选</button>
+            </form>
+            <div class="list-toolbar">
+              <div id="itemSummary" class="summary">尚未加载</div>
+              <div class="pagination">
+                <button id="prevPage" class="text-button" type="button">上一页</button>
+                <button id="nextPage" class="text-button" type="button">下一页</button>
+              </div>
+            </div>
+            <div id="itemList" class="card-list empty">暂无数据</div>
+          </section>
+
+          <section class="panel" aria-labelledby="wishTitle">
+            <div class="section-heading">
+              <div><span>05</span><h2 id="wishTitle">心愿衣橱</h2></div>
+              <button id="loadWishesBtn" class="button secondary" type="button">刷新心愿</button>
+            </div>
+            <form id="wishForm" class="inline-form">
+              <input name="sourceItemId" placeholder="粘贴其他用户的公开 item ID" required />
+              <button class="button primary" type="submit">收藏公开单品</button>
+            </form>
+            <div id="wishList" class="card-list empty">暂无数据</div>
+          </section>
+        </div>
+
+        <aside class="panel console" aria-labelledby="consoleTitle">
+          <div class="section-heading">
+            <div><span>LOG</span><h2 id="consoleTitle">请求记录</h2></div>
+            <button id="clearLog" class="text-button" type="button">清空</button>
+          </div>
+          <p class="hint">这里显示真实请求、HTTP 状态、业务错误码和 requestId。</p>
+          <div id="logList" class="log-list" aria-live="polite"></div>
+        </aside>
+      </div>
+    </main>
+
+    <template id="itemTemplate">
+      <article class="item-card">
+        <div class="item-image"><span>IMG</span></div>
+        <div class="item-body">
+          <div class="item-title-row"><h3></h3><span class="badge"></span></div>
+          <p class="item-meta"></p>
+          <p class="item-tags"></p>
+          <p class="item-id"></p>
+          <div class="item-actions"></div>
+        </div>
+      </article>
+    </template>
+
+    <dialog id="editDialog" aria-labelledby="editTitle">
+      <form id="editForm" class="edit-form">
+        <div class="dialog-heading">
+          <div><h2 id="editTitle">编辑衣物信息</h2><p class="hint">可以修改这件衣物的全部资料，保存后会立即更新。</p></div>
+          <button id="editClose" class="text-button" type="button" aria-label="关闭">关闭</button>
+        </div>
+        <input name="itemId" type="hidden" />
+        <div class="form-grid">
+          <label>名称<input name="name" required maxlength="120" /></label>
+          <label>分类<select name="category"><option value="">未分类</option></select></label>
+          <label>主颜色<input name="color" maxlength="32" /></label>
+          <label>颜色组<input name="colors" placeholder="用逗号分隔，如：米白, 奶油色" /></label>
+          <label>保暖度<select name="warmth"><option value="">未填写</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+          <label>材质<input name="material" maxlength="80" /></label>
+          <label>图案<input name="pattern" maxlength="80" /></label>
+          <label>可见性<select name="visibility"><option value="private">私密</option><option value="public">公开</option></select></label>
+          <label>季节<select name="season" multiple></select></label>
+          <label>风格<select name="style" multiple></select></label>
+          <label>场合<select name="occasion" multiple></select></label>
+          <label class="check-label"><input name="isFavorite" type="checkbox" />标为常用</label>
+        </div>
+        <div class="dialog-actions">
+          <button id="editCancel" class="button secondary" type="button">取消</button>
+          <button class="button primary" type="submit">保存全部字段</button>
+        </div>
+      </form>
+    </dialog>
+    <script type="module" src="/debug-assets/wardrobe.js"></script>
+  </body>
+</html>

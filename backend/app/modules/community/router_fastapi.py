@@ -12,7 +12,7 @@ from app.core.deps import get_db
 from app.core.errors import unauthorized
 from app.modules.community import service
 
-router = APIRouter(prefix="/api/v1", tags=["community"])
+router = APIRouter(tags=["community"])
 
 
 def optional_viewer(authorization: str | None = Header(default=None)) -> str | None:

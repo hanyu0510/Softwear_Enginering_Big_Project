@@ -9,6 +9,11 @@
 """
 from __future__ import annotations
 
+from collections.abc import Generator
+import sqlite3
+
+from app.core.db import get_conn
+
 # 演示回退：账号模块未接入时的本地 token。正式接入后这段不再生效。
 _DEMO_TOKEN = "dev-me"
 _DEMO_USER_ID = "u_me"
@@ -19,6 +24,12 @@ class DemoUser:
 
     def __init__(self, uid: str):
         self.id = uid
+
+
+def get_db() -> Generator[sqlite3.Connection, None, None]:
+    """社区模块使用的 SQLite 连接；连接地址由公共 db 模块统一管理。"""
+    with get_conn() as conn:
+        yield conn
 
 
 def verify_bearer(authorization: str | None):

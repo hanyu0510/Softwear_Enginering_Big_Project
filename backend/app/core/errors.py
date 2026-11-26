@@ -1,21 +1,25 @@
-# -*- coding: utf-8 -*-
-"""统一错误：内部抛 ApiError，适配层负责翻译成文档 4.1 的响应外壳。
+import logging
+from uuid import uuid4
 
-业务码与 HTTP 状态的对应关系按 4.2 的约定：40001->400、40101->401、
-40401->404、42901->429、50001->500。前端两种都要处理，所以两边都要对。
-"""
-from __future__ import annotations
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+
+logger = logging.getLogger(__name__)
 
 
 class ApiError(Exception):
-    def __init__(self, code: int, message: str, status: int = 400):
-        super().__init__(message)
+    def __init__(self, code: int, message: str, status_code: int = 400):
         self.code = code
         self.message = message
-        self.status = status
+        self.status_code = status_code
+        self.status = status_code
+        super().__init__(message)
 
-    def __repr__(self) -> str:  # 便于日志里直接看到业务码
-        return f"ApiError(code={self.code}, status={self.status}, message={self.message!r})"
+    def __repr__(self) -> str:
+        return f"ApiError(code={self.code}, status={self.status_code}, message={self.message!r})"
 
 
 def bad_request(message: str) -> ApiError:
@@ -28,3 +32,74 @@ def unauthorized(message: str = "未登录或登录已过期") -> ApiError:
 
 def not_found(message: str = "资源不存在或不可见") -> ApiError:
     return ApiError(40401, message, 404)
+
+
+def request_id(request: Request) -> str:
+    return getattr(request.state, "request_id", f"req_{uuid4().hex[:12]}")
+
+
+def success(request: Request, data=None, message: str = "ok") -> dict:
+    return {
+        "code": 0,
+        "message": message,
+        "data": data,
+        "requestId": request_id(request),
+    }
+
+
+def install_exception_handlers(app: FastAPI) -> None:
+    @app.exception_handler(ApiError)
+    async def api_error_handler(request: Request, exc: ApiError):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "code": exc.code,
+                "message": exc.message,
+                "data": None,
+                "requestId": request_id(request),
+            },
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error_handler(request: Request, exc: RequestValidationError):
+        details = exc.errors()[0] if exc.errors() else {}
+        location = ".".join(str(part) for part in details.get("loc", []) if part != "body")
+        message = details.get("msg", "参数无效")
+        if location:
+            message = f"{location}: {message}"
+        return JSONResponse(
+            status_code=422,
+            content={
+                "code": 40001,
+                "message": message,
+                "data": None,
+                "requestId": request_id(request),
+            },
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error_handler(request: Request, exc: StarletteHTTPException):
+        code_by_status = {401: 40101, 403: 40301, 404: 40401, 413: 41301, 429: 42901}
+        code = code_by_status.get(exc.status_code, 40001 if exc.status_code < 500 else 50001)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "code": code,
+                "message": str(exc.detail),
+                "data": None,
+                "requestId": request_id(request),
+            },
+        )
+
+    @app.exception_handler(Exception)
+    async def unexpected_error_handler(request: Request, exc: Exception):
+        logger.exception("Unhandled server error")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "code": 50001,
+                "message": "服务内部错误",
+                "data": None,
+                "requestId": request_id(request),
+            },
+        )
