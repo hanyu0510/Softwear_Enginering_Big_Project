@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>我的衣橱 · 发现穿搭</title>
+<style>
+
+  :root{
+    --ink:#1c1a18; --ink2:#6d6862; --ink3:#a7a19a;
+    --line:#ebe9e5; --bg:#faf9f7; --card:#fff;
+    --accent:#e0503c; --like:#f5334a;
+    --radius:14px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    --mono:"SF Mono",ui-monospace,Consolas,"Courier New",monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;font-family:var(--font);color:var(--ink);background:var(--bg);
+    display:flex;align-items:stretch;min-height:100vh;
+  }
+
+  /* ---------------- 网站主体 ---------------- */
+  .site{flex:1;min-width:0;display:flex;flex-direction:column}
+  .site-header{
+    position:sticky;top:0;z-index:50;height:66px;flex:0 0 auto;
+    background:rgba(255,255,255,.93);backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:clamp(12px,2.2vw,30px);
+    padding:0 clamp(16px,3vw,40px);
+  }
+  .brand{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:800;white-space:nowrap;letter-spacing:-.4px}
+  .brand .mark{
+    width:30px;height:30px;border-radius:9px;background:var(--accent);color:#fff;
+    display:grid;place-items:center;font-size:15px;box-shadow:0 4px 10px -3px rgba(224,80,60,.5);
+  }
+  .topnav{display:flex;align-items:center;gap:2px}
+  .topnav .nav{
+    border:0;background:none;padding:8px 14px;border-radius:9px;cursor:pointer;
+    font-family:inherit;font-size:13.5px;color:var(--ink2);white-space:nowrap;transition:.15s;
+  }
+  .topnav .nav.on{background:#f3f1ed;color:var(--ink);font-weight:700}
+  .topnav .nav:hover{background:#f7f6f3}
+  .hsearch{
+    flex:1;max-width:340px;height:36px;border-radius:18px;background:#f3f2ef;
+    display:flex;align-items:center;gap:8px;padding:0 13px;color:var(--ink3);
+    font-size:12.5px;cursor:pointer;margin-left:auto;
+  }
+  .hsearch:hover{background:#eeece8}
+  .hactions{display:flex;align-items:center;gap:8px}
+  .hbtn{
+    width:36px;height:36px;border-radius:50%;border:0;background:#f5f4f1;
+    display:grid;place-items:center;cursor:pointer;color:#45403a;
+  }
+  .hbtn:hover{background:#eceae6}
+  .authbox{display:flex;align-items:center;gap:7px;padding-left:10px;border-left:1px solid var(--line)}
+  .authbox .al{font-size:11px;color:var(--ink2);font-family:var(--mono);white-space:nowrap}
+  .switch{position:relative;width:34px;height:19px;border-radius:10px;background:#ddd8d1;cursor:pointer;transition:.18s;flex:0 0 auto}
+  .switch.on{background:#2f7d43}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:.18s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+  .switch.on::after{left:17px}
+
+  /* ---------------- 内容区 ---------------- */
+  .content{width:100%;max-width:1680px;margin:0 auto;padding:0 clamp(16px,3vw,44px) 80px}
+  .topbar{position:sticky;top:66px;z-index:40;background:rgba(250,249,247,.94);backdrop-filter:blur(12px);transition:box-shadow .2s}
+  .topbar.scrolled{box-shadow:0 1px 0 var(--line)}
+  .tabs{display:flex;align-items:center;justify-content:center;gap:30px;height:58px}
+  .tab{
+    position:relative;border:0;background:none;padding:0 2px;height:58px;cursor:pointer;
+    font-size:15px;color:var(--ink2);font-family:inherit;font-weight:500;letter-spacing:.3px;transition:.15s;
+  }
+  .tab:hover{color:var(--ink)}
+  .tab.active{color:var(--ink);font-weight:700;font-size:16px}
+  .tab.active::after{content:"";position:absolute;left:50%;bottom:13px;transform:translateX(-50%);width:18px;height:3px;border-radius:2px;background:var(--accent)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:0 0 18px}
+  .chip{
+    flex:0 0 auto;border:1px solid var(--line);background:#fff;color:#514c45;
+    font-size:12px;padding:5px 13px;border-radius:14px;cursor:pointer;font-family:inherit;transition:.15s;
+  }
+  .chip:hover{border-color:#d3cec6}
+  .chip.on{background:#1c1a18;border-color:#1c1a18;color:#fff}
+
+  /* ---------------- 瀑布流 ---------------- */
+  .feed{min-height:60vh}
+  .grid{display:flex;gap:16px;align-items:flex-start}
+  .col{flex:1;min-width:0;display:flex;flex-direction:column;gap:16px}
+  .card{
+    background:var(--card);border:1px solid #f0eeeb;border-radius:var(--radius);cursor:pointer;
+    animation:rise .34s cubic-bezier(.22,.85,.3,1) both;transition:transform .18s,box-shadow .18s;
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:0 14px 32px -14px rgba(40,32,24,.3)}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .thumb{position:relative;width:100%;border-radius:var(--radius);overflow:hidden;background:#f0eeea;display:block}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s}
+  .thumb img.ready{opacity:1}
+  .badge{
+    position:absolute;left:10px;top:10px;height:22px;padding:0 9px;border-radius:11px;
+    background:rgba(28,26,24,.55);backdrop-filter:blur(6px);color:#fff;font-size:10.5px;
+    display:flex;align-items:center;gap:3px;letter-spacing:.2px;
+  }
+  .badge.saved{left:auto;right:10px;background:rgba(255,255,255,.88);color:#3a3733}
+  .ctext{
+    font-size:14px;line-height:1.5;margin:10px 12px 8px;color:#2b2825;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;
+  }
+  .cfoot{display:flex;align-items:center;gap:7px;padding:0 12px 12px;color:var(--ink3);font-size:12px}
+  .cfoot .ava{width:22px;height:22px;border-radius:50%;flex:0 0 auto;background:#eee;object-fit:cover;cursor:pointer}
+  .cfoot .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#6d6862;cursor:pointer}
+  .likebtn{
+    display:flex;align-items:center;gap:4px;border:0;background:none;padding:3px 2px;cursor:pointer;
+    color:#8b857e;font-size:12px;font-family:inherit;
+  }
+  .likebtn svg{display:block;transition:transform .18s;width:14px;height:14px}
+  .likebtn.on{color:var(--like)}
+  .likebtn.pop svg{transform:scale(1.32)}
+  .favbtn.on{color:#e0993c}
+
+  /* 骨架 / 空态 */
+  .sk{border-radius:var(--radius);background:linear-gradient(100deg,#f1efec 30%,#f8f7f5 50%,#f1efec 70%);background-size:220% 100%;animation:sh 1.25s infinite}
+  @keyframes sh{to{background-position:-180% 0}}
+  .state{padding:70px 26px;text-align:center;color:var(--ink2)}
+  .state .t{font-size:16px;font-weight:600;color:#3a3733;margin-bottom:8px}
+  .state .d{font-size:13px;line-height:1.8;color:#9a948c}
+  .state .btn{margin-top:18px;border:1px solid #dcd8d2;background:#fff;color:#2b2825;font-size:13px;padding:9px 20px;border-radius:16px;cursor:pointer;font-family:inherit}
+  .state code{font-family:var(--mono);font-size:11.5px;background:#f4f2ef;padding:2px 5px;border-radius:4px;color:#7a736c}
+  .end{text-align:center;font-size:12px;color:#b6b0a8;padding:24px 0 8px}
+
+  /* toast */
+  .toast{
+    position:fixed;left:50%;bottom:34px;transform:translate(-50%,14px);
+    background:rgba(28,26,24,.92);color:#fff;font-size:13px;padding:10px 18px;border-radius:10px;
+    opacity:0;pointer-events:none;transition:.24s;z-index:200;max-width:80vw;text-align:center;line-height:1.5;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* ---------------- 详情 / 作者主页：网站弹窗 ---------------- */
+  .sheet{
+    position:fixed;z-index:120;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:min(1000px,94vw);height:min(860px,91vh);
+    background:#fff;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;
+    box-shadow:0 0 0 100vmax rgba(28,26,24,.42), 0 30px 90px -20px rgba(0,0,0,.5);
+    animation:pop .22s cubic-bezier(.22,.85,.3,1);
+  }
+  .sheet[hidden]{display:none}
+  @keyframes pop{from{opacity:0;transform:translate(-50%,-48%) scale(.985)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+  .dhead{height:56px;flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid var(--line);font-size:15px;font-weight:600}
+  .dhead .grow{flex:1}
+  .dhead button{border:0;background:none;padding:6px 9px;cursor:pointer;color:#3a3733;font-family:inherit;font-size:14px;border-radius:8px}
+  .dhead button:hover{background:#f4f2ef}
+  .dscroll{flex:1;min-height:0;display:grid;grid-template-columns:1.05fr 1fr;overflow:hidden}
+  .dmedia{grid-column:1;grid-row:1;background:#f2f0ed;overflow-y:auto;display:flex;align-items:flex-start;justify-content:center}
+  .dmedia img{width:100%;display:block}
+  .dright{grid-column:2;grid-row:1;overflow-y:auto;padding-bottom:16px}
+  .dright::-webkit-scrollbar,.dmedia::-webkit-scrollbar{width:7px}
+  .dright::-webkit-scrollbar-thumb,.dmedia::-webkit-scrollbar-thumb{background:#e6e2dc;border-radius:4px}
+  .dauthor{display:flex;align-items:center;gap:10px;padding:15px 20px;cursor:pointer;border-bottom:1px solid var(--line)}
+  .dauthor img{width:40px;height:40px;border-radius:50%;object-fit:cover}
+  .dauthor .an{flex:1;min-width:0}
+  .dauthor .an b{font-size:14px;display:block}
+  .dauthor .an small{font-size:11px;color:var(--ink3)}
+  .dauthor .follow{border:1px solid #dcd8d2;background:#fff;border-radius:14px;padding:5px 13px;font-size:12px;font-family:inherit;color:#3a3733;cursor:pointer;white-space:nowrap}
+  .dauthor .follow:hover{background:#f7f5f1}
+  .dauthor .follow.on{background:#f4f3f0;color:#8b857e;border-color:#e8e5df}
+  .dcontent{padding:20px 22px 6px}
+  .helpline{display:none;margin-bottom:10px}
+  .helpline span{display:inline-block;background:#fff0e6;color:#c05b2e;font-size:11.5px;font-weight:600;border-radius:5px;padding:4px 9px}
+  .dtitle{font-size:21px;line-height:1.45;font-weight:700;margin:0 0 13px;letter-spacing:-.3px}
+  .dbody{font-size:14px;line-height:1.9;color:#3b3834;white-space:pre-wrap;word-break:break-word}
+  .dtags{display:flex;flex-wrap:wrap;gap:8px;padding:8px 22px 4px}
+  .dtags span{font-size:12px;color:#7a5ba8;background:#f6f3fa;border-radius:11px;padding:4px 10px}
+  .dtime{font-size:11.5px;color:var(--ink3);padding:10px 22px 16px}
+  .secTitle{font-size:13.5px;font-weight:600;padding:14px 22px 6px;color:#3a3733;border-top:1px solid var(--line)}
+  .secTitle small{font-weight:400;color:var(--ink3);margin-left:6px;font-size:11.5px}
+  .comment{display:flex;gap:10px;padding:12px 22px 4px}
+  .comment>img{width:30px;height:30px;border-radius:50%;object-fit:cover;flex:0 0 auto}
+  .cbody{flex:1;min-width:0}
+  .cname{font-size:12px;color:#8b857e}
+  .cname em{font-style:normal;background:#f0ede8;border-radius:5px;padding:1px 5px;font-size:10px;margin-left:5px;color:#7a736c}
+  .creply{font-size:11.5px;color:#8b857e;background:#f6f5f2;padding:6px 9px;border-radius:6px;margin:6px 0 2px;line-height:1.55}
+  .ctext{font-size:13.5px;line-height:1.7;margin-top:4px;white-space:pre-wrap;word-break:break-word}
+  .cmeta{font-size:11px;color:var(--ink3);margin-top:6px}
+  .noComments{text-align:center;color:var(--ink3);font-size:12.5px;padding:32px 0}
+  .dfoot{flex:0 0 auto;height:66px;background:rgba(255,255,255,.97);border-top:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 20px}
+  .dlike{border:0;background:none;display:flex;align-items:center;gap:6px;color:#6d6862;font-size:13px;font-family:inherit;cursor:pointer;padding:8px 4px;white-space:nowrap}
+  .dlike svg{width:19px;height:19px}
+  .dlike.on{color:var(--like)}
+  .dlike.dfav.on{color:#e0993c}
+  .composer{flex:1;min-width:0;display:flex;align-items:center;gap:6px;background:#f4f3f0;border-radius:18px;padding:5px 5px 5px 14px}
+  .composer input{flex:1;min-width:0;border:0;background:none;outline:none;font-size:13px;font-family:inherit;color:#3a3733}
+  .composer input::placeholder{color:#aaa49d}
+  .composer button{border:0;border-radius:14px;padding:7px 14px;font-size:12px;font-family:inherit;background:#1c1a18;color:#fff;cursor:pointer;white-space:nowrap}
+  .composer button.guest{background:#e6e2dc;color:#6d6862}
+  .aprofile{padding:30px 22px 22px;text-align:center;border-bottom:1px solid var(--line)}
+  .aprofile img{width:76px;height:76px;border-radius:50%;object-fit:cover}
+  .aprofile .nm{font-size:19px;font-weight:700;margin-top:11px}
+  .aprofile .bio{font-size:13px;color:var(--ink2);line-height:1.6;margin-top:7px}
+  .aprofile .nums{font-size:12px;color:var(--ink3);margin-top:6px}
+  .followbtn{margin-top:14px;border:1px solid #dcd8d2;background:#fff;border-radius:15px;padding:7px 24px;font-size:13px;font-family:inherit;color:#3a3733;cursor:pointer}
+  .followbtn:hover{background:#f7f5f1}
+  .followbtn.on{background:#f4f3f0;color:#8b857e}
+  .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;padding:18px}
+  .agrid .mini{cursor:pointer}
+  .agrid img{width:100%;aspect-ratio:.75;object-fit:cover;border-radius:10px;display:block;background:#f1efec}
+  .agrid p{font-size:12.5px;line-height:1.5;margin:7px 2px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+  /* ---------------- 面板折叠 ---------------- */
+  .panel-toggle{
+    position:fixed;right:14px;bottom:18px;z-index:90;display:none;
+    border:0;border-radius:22px;background:#1c1a18;color:#fff;cursor:pointer;
+    font-family:inherit;font-size:12px;padding:11px 17px;box-shadow:0 8px 22px -6px rgba(0,0,0,.5);
+  }
+  body.panel-collapsed .panel{display:none}
+  body.panel-collapsed .panel-toggle{display:block}
+
+  @media (max-width:1180px){
+    .panel{width:380px;flex-basis:380px}
+    .site-header{gap:10px}
+    .topnav .nav{padding:8px 9px;font-size:12.5px}
+    .hsearch{display:none}
+  }
+  @media (max-width:900px){
+    .sheet{width:96vw;height:92vh}
+    .dscroll{grid-template-columns:1fr;overflow-y:auto}
+    .dmedia{grid-column:1;grid-row:auto;overflow:visible;max-height:52vh}
+    .dright{grid-column:1;grid-row:auto;overflow:visible}
+  }
+
+  /* ---------------- 右侧联调面板 ---------------- */
+  .panel{
+    width:420px;flex:0 0 420px;background:#fff;border-left:1px solid #eae7e2;overflow:hidden;
+    display:flex;flex-direction:column;height:100vh;position:sticky;top:0;
+  }
+  .phead{padding:16px 18px 0}
+  .phead .row1{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .verb{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.4px;background:#eaf5ec;color:#2f7d43;padding:3px 7px;border-radius:5px}
+  .path{font-family:var(--mono);font-size:12px;color:#332f2b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .pill{font-family:var(--mono);font-size:10.5px;padding:3px 7px;border-radius:5px;border:1px solid #e6e2dc;color:#7a736c;white-space:nowrap}
+  .pill.ok{background:#f1f9f3;border-color:#cfe9d6;color:#2f7d43}
+  .pill.err{background:#fdf0ee;border-color:#f6d3cc;color:#b3422d}
+  .phead .sub{font-size:11.5px;color:#9a948c;line-height:1.6;margin-bottom:12px}
+  .ptabs{display:flex;gap:18px;border-bottom:1px solid var(--line)}
+  .ptab{border:0;background:none;padding:0 0 9px;font-family:inherit;font-size:12.5px;color:#8b857e;cursor:pointer;position:relative}
+  .ptab.on{color:#1c1a18;font-weight:600}
+  .ptab.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:#1c1a18;border-radius:2px}
+  .pbody{flex:1;overflow-y:auto;padding:14px 18px 18px;font-size:12px}
+  .pbody::-webkit-scrollbar{width:8px}
+  .pbody::-webkit-scrollbar-thumb{background:#e6e2dc;border-radius:4px}
+
+  .kv{width:100%;border-collapse:collapse}
+  .kv td{padding:6px 0;border-bottom:1px dashed #f0ede8;vertical-align:top}
+  .kv td:first-child{width:96px;font-family:var(--mono);font-size:11px;color:#7a736c}
+  .kv td:last-child{font-family:var(--mono);font-size:11.5px;color:#2b2825;word-break:break-all}
+  .kv tr.hl td:last-child{color:#b3422d;font-weight:600}
+
+  pre.json{
+    margin:0;background:#fbfaf8;border:1px solid #efecE7;border-radius:10px;padding:12px;
+    font-family:var(--mono);font-size:11px;line-height:1.65;color:#3a3733;
+    overflow:auto;max-height:520px;white-space:pre;tab-size:2;
+  }
+  .k{color:#9a5b2b}.s{color:#2f7d43}.n{color:#3a63a8}.b{color:#a8402c}
+
+  .mapt{width:100%;border-collapse:collapse;font-size:11.5px}
+  .mapt th{text-align:left;font-weight:600;color:#7a736c;font-size:10.5px;letter-spacing:.3px;padding:0 8px 7px 0;border-bottom:1px solid var(--line)}
+  .mapt td{padding:7px 8px 7px 0;border-bottom:1px solid #f4f2ef;vertical-align:top;line-height:1.55}
+  .mapt code{font-family:var(--mono);font-size:10.5px;background:#f5f3f0;padding:1px 4px;border-radius:3px;color:#5c554e}
+  .mapt .new{font-size:9.5px;color:#b3422d;border:1px solid #f3d6cf;background:#fdf3f0;border-radius:3px;padding:0 3px;margin-left:4px}
+
+  .rules{list-style:none;padding:0;margin:0;counter-reset:r}
+  .rules li{position:relative;padding:0 0 11px 22px;font-size:11.5px;line-height:1.7;color:#4a453f;counter-increment:r}
+  .rules li::before{
+    content:counter(r);position:absolute;left:0;top:1px;width:15px;height:15px;border-radius:4px;
+    background:#f3f1ed;color:#7a736c;font-size:9.5px;display:grid;place-items:center;font-family:var(--mono);
+  }
+  .rules code{font-family:var(--mono);font-size:10.5px;background:#f5f3f0;padding:1px 4px;border-radius:3px}
+  .hint{font-size:11px;color:#9a948c;line-height:1.7;background:#fbfaf8;border:1px dashed #e9e5df;border-radius:8px;padding:9px 11px;margin:10px 0 0}
+
+  .pfoot{border-top:1px solid var(--line);padding:12px 18px 14px;background:#fdfdfc}
+  .frow{display:flex;align-items:center;gap:9px;font-size:11.5px;color:#5c554e;margin-bottom:9px}
+  .frow:last-child{margin-bottom:0}
+  .switch{position:relative;width:34px;height:19px;border-radius:10px;background:#ddd8d1;cursor:pointer;transition:.18s;flex:0 0 auto}
+  .switch.on{background:#2f7d43}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:.18s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+  .switch.on::after{left:17px}
+  .urlin{flex:1;min-width:0;border:1px solid #e6e2dc;border-radius:7px;padding:5px 8px;font-family:var(--mono);font-size:11px;color:#3a3733;background:#fff;outline:none}
+  .urlin:focus{border-color:#c9c3bb}
+  .gbtn{border:1px solid #e0dcd5;background:#fff;border-radius:7px;padding:5px 10px;font-size:11px;font-family:inherit;color:#3a3733;cursor:pointer;white-space:nowrap}
+  .gbtn:active{background:#f7f5f1}
+  .log{margin-top:2px;font-family:var(--mono);font-size:10.5px;color:#9a948c;line-height:1.75;max-height:58px;overflow-y:auto}
+  .log .ok{color:#2f7d43}.log .err{color:#b3422d}
+
+
+</style>
+</head>
+<body>
+
+<!-- ===================== 网站 ===================== -->
+<div class="site">
+  <header class="site-header">
+    <div class="brand"><span class="mark">衣</span>我的衣橱</div>
+    <nav class="topnav" id="topnav">
+      <button class="nav on">发现</button>
+      <button class="nav" data-toast="跳转 /recommendations（推荐页，不在本次范围）">穿搭</button>
+      <button class="nav" data-toast="发布：POST /api/v1/posts（P0）">发布</button>
+      <button class="nav" data-toast="跳转 /items（我的衣橱）">衣橱</button>
+      <button class="nav" data-toast="跳转 /me（我的）">我的</button>
+    </nav>
+    <div class="hsearch" id="searchBox">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.6"/><path d="m10.6 10.6 3 3" stroke-linecap="round"/></svg>
+      <span>搜穿搭 / 找灵感 · 秋季通勤</span>
+    </div>
+    <div class="hactions">
+      <button class="hbtn" title="消息" id="msgBtn">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5.6A2.6 2.6 0 0 1 5.6 3h8.8A2.6 2.6 0 0 1 17 5.6v5.3a2.6 2.6 0 0 1-2.6 2.6H8.4L4.6 16.6v-3.1A2.6 2.6 0 0 1 3 10.9z" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="authbox">
+        <div class="switch on" id="authSwitch" title="点击切换登录态"></div>
+        <span class="al" id="authLabel">u_me（已登录）</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+    <div class="topbar" id="topbar">
+      <div class="tabs" id="tabs">
+        <button class="tab" data-tab="following">关注</button>
+        <button class="tab active" data-tab="hot">推荐</button>
+        <button class="tab" data-tab="newest">最新</button>
+      </div>
+      <div class="chips" id="chips">
+        <button class="chip" data-tag="">全部</button>
+        <button class="chip" data-tag="求助"># 求助</button>
+        <button class="chip" data-tag="梨形穿搭"># 梨形穿搭</button>
+        <button class="chip" data-tag="通勤"># 通勤</button>
+        <button class="chip" data-tag="极简"># 极简</button>
+        <button class="chip" data-tag="街头"># 街头</button>
+        <button class="chip" data-tag="显高"># 显高</button>
+        <button class="chip" data-tag="不摆拍"># 不摆拍</button>
+      </div>
+    </div>
+
+    <div class="feed" id="feed">
+      <div class="grid" id="grid"></div>
+      <div id="state"></div>
+      <div id="sentinel" style="height:1px"></div>
+    </div>
+  </main>
+
+  <!-- 帖子详情：网站两栏弹窗 -->
+  <div class="sheet" id="detail" hidden>
+    <div class="dhead">
+      <button id="detailBack" title="关闭">✕</button>
+      <span>笔记详情</span>
+      <span class="grow"></span>
+      <button id="detailMore" title="更多">···</button>
+    </div>
+    <div class="dscroll" id="dscroll">
+      <div class="dmedia" id="dmedia"></div>
+      <div class="dright" id="dright">
+        <div class="dauthor" id="dauthor"></div>
+        <div class="dcontent"><div class="helpline" id="helpline"><span>求建议 · 求助帖</span></div><h1 class="dtitle" id="dtitle"></h1><div class="dbody" id="dbody"></div></div>
+        <div class="dtags" id="dtags"></div>
+        <div class="dtime" id="dtime"></div>
+        <div class="secTitle">共 <span id="cmtTotal">0</span> 条评论 <small>回复需登录</small></div>
+        <div id="comments"></div>
+      </div>
+    </div>
+    <div class="dfoot">
+      <button class="dlike" id="dLike"></button>
+      <button class="dlike dfav" id="dBookmark" title="收藏"></button>
+      <div class="composer">
+        <input id="commentInput" placeholder="登录后才能评论…" disabled />
+        <button id="sendComment" class="guest">登录</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 作者主页 -->
+  <div class="sheet" id="authorSheet" hidden style="width:min(880px,94vw)">
+    <div class="dhead"><button id="authorBack" title="关闭">✕</button><span>博主主页</span></div>
+    <div class="dscroll" style="display:block;overflow-y:auto">
+      <div class="aprofile" id="aprofile"></div>
+      <div class="agrid" id="agrid"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<!-- ===================== 联调面板 ===================== -->
+<aside class="panel">
+  <div class="phead">
+    <div class="row1">
+      <span class="verb">GET</span>
+      <span class="path">/api/v1/posts</span>
+      <span class="pill" id="sourcePill">连接中…</span>
+      <span class="pill" id="statusPill">—</span>
+    </div>
+    <div class="sub">
+      首页信息流 + 详情 + 评论。游客可浏览和点赞；关注流、评论、关注用户需要登录。
+      点卡片/头像/红心，面板会显示对应的真实请求与响应，可直接当联调用例。
+    </div>
+    <div class="ptabs" id="ptabs">
+      <button class="ptab on" data-p="req">请求</button>
+      <button class="ptab" data-p="res">响应</button>
+      <button class="ptab" data-p="map">字段映射</button>
+      <button class="ptab" data-p="layout">布局规则</button>
+    </div>
+  </div>
+  <div class="pbody" id="pbody"></div>
+  <div class="pfoot">
+    <div class="frow">
+      <span style="width:56px">登录态</span>
+      <div class="switch on" id="authSwitchPanel"></div>
+      <span id="authLabelPanel" style="font-family:var(--mono);font-size:11px;color:#7a736c">u_me（已登录）</span>
+    </div>
+    <div class="frow">
+      <span style="width:56px">后端</span>
+      <input class="urlin" id="apiBase" value="http://127.0.0.1:8000" />
+      <button class="gbtn" id="retryBtn">重试</button>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+</aside>
+<button class="panel-toggle" id="panelToggle">联调面板 ›</button>
+
+<script>
+
+/* =====================================================================
+   数据源：优先打本机后端（backend/devserver.py 或 FastAPI），
+   连不上就用本地 Mock（逻辑与 service.py 一致：同一套排序/筛选/分页）。
+   ===================================================================== */
+const TZ_HOURS = 8;
+const nowMs = Date.now();
+const iso = (hoursAgo) => new Date(nowMs - hoursAgo * 3600e3).toISOString();
+
+const MOCK_USERS = {"u_1": {"id": "u_1", "nickname": "阿岚的衣橱", "avatar_url": "assets/avatar_01.png", "bio": "每天一套通勤穿搭，衣柜只有 30 件"}, "u_2": {"id": "u_2", "nickname": "MOMO酱", "avatar_url": "assets/avatar_02.png", "bio": "158 / 小个子显高研究员"}, "u_3": {"id": "u_3", "nickname": "老周的穿搭日记", "avatar_url": "assets/avatar_03.png", "bio": "男生基础款叠穿，少买但买对"}, "u_4": {"id": "u_4", "nickname": "十一在路上", "avatar_url": "assets/avatar_04.png", "bio": "一个登机箱走 4 天"}, "u_5": {"id": "u_5", "nickname": "甜盐 Nana", "avatar_url": "assets/avatar_05.png", "bio": "约会穿搭 / 甜酷之间来回横跳"}, "u_6": {"id": "u_6", "nickname": "小满", "avatar_url": "assets/avatar_06.png", "bio": "街头、皮衣、球鞋"}, "u_me": {"id": "u_me", "nickname": "我", "avatar_url": "assets/avatar_07.png", "bio": "这学期开始整理自己的衣橱"}};
+
+const MOCK_POSTS = [{"id": "post_1", "uid": "u_1", "no": 1, "w": 600, "h": 800, "type": "outfit", "title": "去掉滤镜不摆拍‼️115斤梨形小个子春装试穿 衬衫那套真的显瘦", "body": "先说身材：158cm / 115斤，胯宽大腿粗，典型梨形。全部自然光手机直出，没滤镜没摆拍，站着拍完就发。\n\n第一套衬衫是我今年最满意的一件：落肩但不塌，下摆塞一半，腰线立刻出来；配奶白阔腿裤，胯和大腿全藏住。\n\n第二套针织开衫+半裙，裙长卡在小腿最细的地方，配短靴视觉腿长直接+8cm。\n\n梨形姐妹真的别硬穿紧身裤，把「松但不垮」这四个字记住就够了。", "tags": ["梨形穿搭", "春装试穿", "不摆拍"], "ago": 3, "like": 128, "cmt": 4}, {"id": "post_2", "uid": "u_5", "no": 2, "w": 640, "h": 800, "type": "help", "title": "求助😭 158/105斤梨形胯宽，通勤到底怎么穿不显胯？", "body": "下周开始实习，公司要求不能太休闲。我胯宽+大腿粗，穿西裤像偷穿妈妈的裤子，穿裙子又怕坐电梯尴尬。\n\n预算有限，最好能和我衣柜里已有的白衬衫、卡其风衣搭。姐妹们有无具体版型/长度推荐？球鞋能穿吗？\n\n真的求建议，不是钓鱼！评论区我把试穿图补上。", "tags": ["求助", "梨形穿搭", "通勤"], "ago": 8, "like": 342, "cmt": 4}, {"id": "post_3", "uid": "u_3", "no": 3, "w": 700, "h": 700, "type": "outfit", "title": "男生秋冬叠穿公式｜三层就够，别再往上堆第四层了", "body": "衬衫 + 圆领针织 + 长大衣，这是我今年重复率最高的一套。\n\n关键是每层长度要错开：衬衫下摆露出 3cm，针织袖口露出 1cm，大衣不要扣。\n\n颜色控制在三个以内：藏青、米白、炭灰。预算不高也能穿得干净。", "tags": ["男生穿搭", "叠穿", "通勤"], "ago": 20, "like": 96, "cmt": 2}, {"id": "post_4", "uid": "u_4", "no": 4, "w": 560, "h": 840, "type": "outfit", "title": "大理4天3套｜一个20寸箱子真的够了，不摆拍实拍", "body": "行程：古城拍照 + 洱海骑行 + 苍山徒步。我没有带很多衣服，就是薄针织、长裙、一件防风外套来回换。\n\n早晚温差大，靠叠穿解决；鞋子只带一双好走路的乐福鞋。\n\n旅行穿搭最重要的是别为了拍照穿难受的衣服，走两公里就知道差别了。", "tags": ["旅行穿搭", "大理", "行李"], "ago": 2, "like": 76, "cmt": 2}, {"id": "post_5", "uid": "u_6", "no": 5, "w": 720, "h": 780, "type": "outfit", "title": "不摆拍实测｜皮衣配白T，重点全在鞋上", "body": "皮衣买回来闲置了半年，这次终于找到舒服的穿法：里面只穿一件宽松白T，不扣扣子。\n\n下半身直筒牛仔裤，鞋子换成厚底球鞋，整体就不会太攻击者。\n\n身高 163，梨形，这套亲测显高。", "tags": ["街头", "皮衣", "梨形穿搭"], "ago": 30, "like": 210, "cmt": 1}, {"id": "post_6", "uid": "u_1", "no": 6, "w": 600, "h": 800, "type": "outfit", "title": "极简灰白公式：三个颜色过一整周，打工人早八友好", "body": "灰、白、燕麦，三色闭环，闭着眼拿都不会出错。\n\n我的方法是：周末把下周 5 套搭好拍照存在备忘录，早上直接照着穿，省掉的决策时间够多睡十分钟。", "tags": ["极简", "通勤", "胶囊衣橱"], "ago": 52, "like": 405, "cmt": 1}, {"id": "post_7", "uid": "u_2", "no": 7, "w": 640, "h": 800, "type": "outfit", "title": "160小个子｜高腰线这样找，视觉腿长+8cm（无滤镜对比）", "body": "上衣塞一半比全塞更自然；腰带和裙腰同色，视觉上是一条连续的线。\n\n外套长度要么到腰、要么到大腿中，最忌卡在胯最宽的位置。\n\n图二是我穿错的长度，对比一下就知道差别有多大。", "tags": ["小个子", "显高", "不摆拍"], "ago": 5, "like": 88, "cmt": 0}, {"id": "post_8", "uid": "u_3", "no": 8, "w": 700, "h": 700, "type": "outfit", "title": "降温了！羽绒服也能穿得不臃肿的3个穿法", "body": "短款羽绒服 + 直筒裤，把腰线露出来；内搭尽量薄但保暖，羊毛衫比卫衣利落。\n\n长款羽绒服敞开穿，里面用同色系，视觉上是一条竖线。\n\n不建议上下都宽松，会整个人变成一个球。", "tags": ["冬季穿搭", "羽绒服", "男生穿搭"], "ago": 15, "like": 63, "cmt": 0}, {"id": "post_9", "uid": "u_5", "no": 9, "w": 560, "h": 840, "type": "help", "title": "求建议！第一次约会穿针织开衫+缎面裙会不会太用力？", "body": "晚上七点吃饭，商场里灯光比较暗。我打算穿米色开衫+香槟色缎面裙，但怕显得太正式。\n\n开衫是扣满还是留两颗？鞋子穿芭蕾鞋还是短靴？在线等，挺急的😭", "tags": ["求助", "约会穿搭", "搭配建议"], "ago": 40, "like": 268, "cmt": 3}, {"id": "post_10", "uid": "u_6", "no": 10, "w": 720, "h": 780, "type": "outfit", "title": "球鞋配西装，通勤也能松弛｜梨形亲测不显腿粗", "body": "把西裤换成直筒牛仔，正式感降一半，舒服度翻倍。\n\n西装选微oversize，肩线刚好落在肩膀外侧一点；球鞋干净就行，不用非得新。\n\n这套我穿着挤了一小时地铁，没勒也没皱。", "tags": ["通勤", "西装", "球鞋"], "ago": 70, "like": 152, "cmt": 0}, {"id": "post_11", "uid": "u_4", "no": 11, "w": 600, "h": 800, "type": "outfit", "title": "换季衣橱断舍离｜最后只留了这12件，附我的筛选标准", "body": "标准很简单：一年没穿就出局；穿上要在镜子前停留超过 3 秒还觉得舒服。\n\n最后留下 12 件，通勤、约会、旅行都能互相搭。数量少了以后，早上反而更快。\n\n不是极简主义，是真的懒得选了。", "tags": ["胶囊衣橱", "整理", "极简"], "ago": 96, "like": 520, "cmt": 0}, {"id": "post_12", "uid": "u_2", "no": 12, "w": 640, "h": 800, "type": "outfit", "title": "秋日野餐｜卡其色系一套，包和鞋同色照片真的更统一", "body": "卡其风衣 + 白T + 棕色半裙，包和鞋都选深棕，整体就收住了。\n\n野餐坐草地，所以裙子选了不容易皱的面料，垫子颜色也跟着衣服选。\n\n到底是穿搭还是摆拍？反正我坐下去第一件事是先吃东西。", "tags": ["秋装", "卡其色", "野餐"], "ago": 26, "like": 118, "cmt": 0}, {"id": "post_13", "uid": "u_5", "no": 4, "w": 560, "h": 840, "type": "help", "title": "应届生面试穿什么？预算300，梨形求一套不踩雷的搭配", "body": "下周校招面试，岗位偏互联网运营，不用正装但要得体。身高 160 / 112斤，胯宽。\n\n预算 300 以内（学生党），最好能买到大衣+内搭+鞋。有没有姐妹能提供具体店铺或版型关键词？\n\n附一张我现在的衣柜照片，真的没什么能穿的。", "tags": ["求助", "面试穿搭", "预算"], "ago": 12, "like": 231, "cmt": 3}, {"id": "post_14", "uid": "u_1", "no": 2, "w": 640, "h": 800, "type": "outfit", "title": "梨形春天怎么穿｜这5条半裙亲测显瘦，不修图实拍", "body": "168/118斤，胯宽。半裙我试了十几条，留下这 5 条：\n\n1) A字中长裙，裙长到小腿最细处；2) 百褶不过膝；3) 直筒牛仔裙开衩；\n4) 高腰伞裙配短上衣；5) 一片式裹裙。\n\n统一原则：腰线要高、胯部要松、下摆要稳。图中都是原相机直出。", "tags": ["梨形穿搭", "半裙", "春装试穿"], "ago": 18, "like": 187, "cmt": 2}];
+
+const MOCK_COMMENTS = [{"id": "c_1", "post_id": "post_1", "uid": "u_2", "text": "姐妹这个衬衫什么版型？我也115斤梨形想抄作业😭", "parent": null, "ago": 2.5}, {"id": "c_2", "post_id": "post_1", "uid": "u_1", "text": "私信你啦～落肩的，别买正肩会显壮", "parent": "c_1", "ago": 2.2}, {"id": "c_3", "post_id": "post_1", "uid": "u_5", "text": "奶白阔腿裤真的显瘦！我买了同款不同色", "parent": null, "ago": 1.8}, {"id": "c_4", "post_id": "post_1", "uid": "u_me", "text": "不摆拍这点太加分了，终于看到真实身材的试穿", "parent": null, "ago": 1.1}, {"id": "c_5", "post_id": "post_2", "uid": "u_1", "text": "西裤选高腰直筒、裤线压褶的，胯那里别有口袋，亲测！", "parent": null, "ago": 6.5}, {"id": "c_6", "post_id": "post_2", "uid": "u_3", "text": "男生路过：直筒九分西裤+乐福鞋，通勤够用了", "parent": null, "ago": 5.8}, {"id": "c_7", "post_id": "post_2", "uid": "u_2", "text": "风衣敞开穿，内搭同色系，视觉上一条竖线", "parent": null, "ago": 4.2}, {"id": "c_8", "post_id": "post_2", "uid": "u_5", "text": "姐妹们太感谢了！我今晚就试，明天补上身图", "parent": null, "ago": 2.1}, {"id": "c_9", "post_id": "post_3", "uid": "u_6", "text": "第四层真的多余哈哈哈，收藏了", "parent": null, "ago": 18}, {"id": "c_10", "post_id": "post_3", "uid": "u_me", "text": "长度错开这个点我之前一直没注意", "parent": null, "ago": 12}, {"id": "c_11", "post_id": "post_4", "uid": "u_2", "text": "乐福鞋走两公里真的不累吗？", "parent": null, "ago": 1.5}, {"id": "c_12", "post_id": "post_4", "uid": "u_4", "text": "不累，但建议先穿几次磨合，新鞋别直接上旅途", "parent": "c_11", "ago": 1.2}, {"id": "c_13", "post_id": "post_5", "uid": "u_1", "text": "厚底球鞋显高又不笨重，同意", "parent": null, "ago": 26}, {"id": "c_14", "post_id": "post_6", "uid": "u_me", "text": "照着做了一周，真的没早起纠结过衣服", "parent": null, "ago": 40}, {"id": "c_15", "post_id": "post_9", "uid": "u_6", "text": "留两颗！扣满像上班，缎面裙配芭蕾鞋更轻", "parent": null, "ago": 35}, {"id": "c_16", "post_id": "post_9", "uid": "u_1", "text": "香槟色很好看，别再加亮闪闪的配饰就够了", "parent": null, "ago": 30}, {"id": "c_17", "post_id": "post_9", "uid": "u_5", "text": "听你们的，决定留两颗配芭蕾鞋，谢谢！", "parent": null, "ago": 24}, {"id": "c_18", "post_id": "post_13", "uid": "u_1", "text": "预算优先买内搭和鞋，大衣可以先借/二手", "parent": null, "ago": 9}, {"id": "c_19", "post_id": "post_13", "uid": "u_3", "text": "关键词搜「垂感 直筒 九分 西裤」，别买紧身", "parent": null, "ago": 7}, {"id": "c_20", "post_id": "post_13", "uid": "u_2", "text": "160梨形+1，面试用裙子记得坐下来试一下长度", "parent": null, "ago": 5}, {"id": "c_21", "post_id": "post_14", "uid": "u_2", "text": "一片式裹裙求具体店铺！", "parent": null, "ago": 14}, {"id": "c_22", "post_id": "post_14", "uid": "u_1", "text": "评论区置顶了，是去年买的，现在应该有同款", "parent": "c_21", "ago": 13}];
+
+const MOCK_VIEWER = {
+  follows:["u_1","u_3"],
+  likes:new Set(["post_2","post_6"]),
+  favs:new Set(["post_4"]),
+};
+
+/* Mock 版 list_feed：与 service.py 同构，只是用 JS 实现一遍 */
+function mockListFeed(q, viewer){
+  const scored = MOCK_POSTS.map(p=>{
+    const age = (nowMs - Date.parse(iso(p.ago)))/3600e3;
+    return {...p, age_hours:age, hot_score:(p.like + p.cmt*2 + 1)/Math.pow(age+2,2)};
+  }).filter(p=>{
+    if(q.tag && !p.tags.includes(q.tag)) return false;
+    if(q.scope==="following" && !(viewer && MOCK_VIEWER.follows.includes(p.uid))) return false;
+    if(q.authorId && q.authorId!==p.uid) return false;
+    return true;
+  });
+  scored.sort((a,b)=>{
+    if(q.sort==="newest") return Date.parse(iso(b.ago)) - Date.parse(iso(a.ago)) || (a.id<b.id?1:-1);
+    return b.hot_score - a.hot_score || (Date.parse(iso(b.ago))-Date.parse(iso(a.ago))) || (a.id<b.id?1:-1);
+  });
+  const total = scored.length;
+  const start = (q.page-1)*q.pageSize;
+  const page = scored.slice(start, start+q.pageSize);
+  const list = page.map(p=>{
+    const u = MOCK_USERS[p.uid];
+    const names = {1:"look_01",2:"look_02",3:"look_03",4:"look_04",5:"look_05",6:"look_06",7:"look_07",8:"look_08",9:"look_09",10:"look_10",11:"look_11",12:"look_12"};
+    const url = `assets/${names[p.no]}.jpg`;
+    return {
+      id:p.id,
+      author:{id:u.id, nickname:u.nickname, avatar_url:u.avatar_url,
+              is_following: !!(viewer && MOCK_VIEWER.follows.includes(u.id))},
+      image_urls:[url],
+      images:[{url, thumb_url:url, width:p.w, height:p.h, aspect_ratio:+(p.w/p.h).toFixed(4)}],
+      title:p.title,
+      text:p.body,
+      post_type:p.type,
+      tags:p.tags,
+      outfit_id:"outfit_"+p.id,
+      like_count:p.like,
+      comment_count:p.cmt,
+      is_liked: !!(viewer && MOCK_VIEWER.likes.has(p.id)),
+      is_favorited: !!(viewer && MOCK_VIEWER.favs.has(p.id)),
+      created_at: iso(p.ago),
+      hot_score:+p.hot_score.toFixed(4),
+    };
+  });
+  return {code:0, message:"ok", data:{list, total, page:q.page, pageSize:q.pageSize,
+    hasMore: start+list.length<total, sort:q.sort, scope:q.scope, tag:q.tag, authorId:q.authorId||null},
+    requestId:"req_mock_" + Math.random().toString(16).slice(2,10)};
+}
+
+/* ---------------- Mock 版详情 / 评论 / 作者主页 ---------------- */
+const mockRid = () => "req_mock_" + Math.random().toString(16).slice(2,10);
+const mockFail = (code,msg) => ({code,message:msg,data:null,requestId:mockRid()});
+const mockOk = (data) => ({code:0,message:"ok",data,requestId:mockRid()});
+
+function imgOf(p){
+  return {url:`assets/look_${String(p.no).padStart(2,"0")}.jpg`,
+          thumb_url:`assets/look_${String(p.no).padStart(2,"0")}.jpg`,
+          width:p.w, height:p.h, aspect_ratio:+(p.w/p.h).toFixed(4)};
+}
+
+function mockGetPost(id, viewer){
+  const p = MOCK_POSTS.find(x=>x.id===id);
+  if(!p) return mockFail(40401,"帖子不存在或已被删除");
+  const u = MOCK_USERS[p.uid];
+  return mockOk({
+    id:p.id, title:p.title, text:p.body, post_type:p.type,
+    author:{...u, post_count:MOCK_POSTS.filter(x=>x.uid===p.uid).length,
+            is_following: !!(viewer && MOCK_VIEWER.follows.includes(u.id))},
+    images:[imgOf(p)], image_urls:[imgOf(p).url], tags:p.tags,
+    outfit_id:"outfit_"+p.id, like_count:p.like, comment_count:p.cmt,
+    is_liked: !!(viewer && MOCK_VIEWER.likes.has(p.id)),
+    is_favorited: !!(viewer && MOCK_VIEWER.favs.has(p.id)),
+    created_at: iso(p.ago),
+  });
+}
+
+function mockCommentsOf(pid){
+  return MOCK_COMMENTS.filter(c=>c.post_id===pid).sort((a,b)=>a.ago-b.ago);
+}
+
+function mockListComments(pid, viewer){
+  const p = MOCK_POSTS.find(x=>x.id===pid);
+  if(!p) return mockFail(40401,"帖子不存在或已被删除");
+  const list = mockCommentsOf(pid).map(c=>{
+    const parent = c.parent ? mockCommentsOf(pid).find(x=>x.id===c.parent) : null;
+    const u = MOCK_USERS[c.uid];
+    return {id:c.id, post_id:pid, author:{...u, is_me:c.uid===viewer},
+            text:c.text, parent_id:c.parent||null,
+            reply_to:parent ? {nickname:MOCK_USERS[parent.uid].nickname, text:parent.text} : null,
+            created_at:iso(c.ago)};
+  });
+  return mockOk({list, total:list.length, page:1, pageSize:20, hasMore:false});
+}
+
+function mockAddComment(pid, text, viewer){
+  if(!viewer) return mockFail(40101,"登录后才能评论");
+  const p = MOCK_POSTS.find(x=>x.id===pid);
+  if(!p) return mockFail(40401,"帖子不存在或已被删除");
+  const c = {id:"c_mock_"+Math.random().toString(16).slice(2,8), post_id:pid,
+             uid:viewer, text, parent:null, ago:0};
+  MOCK_COMMENTS.push(c); p.cmt += 1;
+  const item = {id:c.id, post_id:pid, author:{...MOCK_USERS[viewer], is_me:true},
+                text, parent_id:null, reply_to:null, created_at:iso(0)};
+  return mockOk(item);
+}
+
+function mockGetUser(uid, viewer){
+  const u = MOCK_USERS[uid];
+  if(!u) return mockFail(40401,"用户不存在");
+  return mockOk({...u,
+    post_count:MOCK_POSTS.filter(x=>x.uid===uid).length,
+    follower_count:1 + (uid==="u_1"||uid==="u_3" ? 1:0),
+    is_following: !!(viewer && MOCK_VIEWER.follows.includes(uid))});
+}
+
+function mockLikeAnon(pid){
+  const p = MOCK_POSTS.find(x=>x.id===pid);
+  if(!p) return mockFail(40401,"帖子不存在或已被删除");
+  p.like += 1;
+  const base = S.items.find(x=>x.id===pid); if(base) base.like_count = p.like;
+  return mockOk({post_id:pid, like_count:p.like, is_liked:null, anonymous:true});
+}
+
+function mockToggleFollow(uid, follow){
+  const i = MOCK_VIEWER.follows.indexOf(uid);
+  if(follow && i<0) MOCK_VIEWER.follows.push(uid);
+  if(!follow && i>=0) MOCK_VIEWER.follows.splice(i,1);
+  return mockOk({user_id:uid, is_following:follow});
+}
+
+function mockToggleBookmark(pid, bookmarked){
+  const p = MOCK_POSTS.find(x=>x.id===pid);
+  if(!p) return mockFail(40401,"帖子不存在或已被删除");
+  if(bookmarked) MOCK_VIEWER.favs.add(pid); else MOCK_VIEWER.favs.delete(pid);
+  const base = S.items.find(x=>x.id===pid); if(base) base.is_favorited = bookmarked;
+  return mockOk({post_id:pid, is_favorited:bookmarked});
+}
+
+/* ------------------------------ 状态 ------------------------------ */
+const S = {
+  tab:"hot",
+  tag:"",
+  page:1,
+  pageSize:8,
+  loggedIn:true,
+  items:[],
+  loading:false,
+  done:false,
+  apiBase:"http://127.0.0.1:8000",
+  mode:"mock",       // "live" | "mock"
+  lastReq:null,
+  lastRes:null,
+  panelTab:"req",
+  logs:[],
+};
+
+const VIEWER_ID = () => S.loggedIn ? "u_me" : null;
+
+function buildQuery(){
+  const q = {page:S.page, pageSize:S.pageSize, sort:S.tab==="newest"?"newest":"hot", scope:S.tab==="following"?"following":"all"};
+  if(S.tag) q.tag = S.tag;
+  return q;
+}
+
+function qs(q){
+  const p = new URLSearchParams();
+  Object.entries(q).forEach(([k,v])=>p.set(k,v));
+  return p.toString();
+}
+
+/* ------------------------------ 渲染 ------------------------------ */
+const gridEl = document.getElementById("grid");
+let cols = [];
+function ensureCols(){
+  const w = gridEl.clientWidth || 900;
+  const n = w >= 1240 ? 4 : w >= 860 ? 3 : 2;
+  if(cols.length === n) return;
+  gridEl.innerHTML = "";
+  cols = [];
+  for(let i=0;i<n;i++){ const c=document.createElement("div"); c.className="col"; gridEl.appendChild(c); cols.push(c); }
+  S._heights = new Array(n).fill(0);
+}
+const feed = document.getElementById("feed");
+const stateEl = document.getElementById("state");
+const toastEl = document.getElementById("toast");
+
+const HEART = `<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 12S1.8 8.6 1.8 5.2A2.9 2.9 0 0 1 7 3.4a2.9 2.9 0 0 1 5.2 1.8C12.2 8.6 7 12 7 12Z" stroke-linejoin="round"/></svg>`;
+const HEART_ON = `<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor"><path d="M7 12S1.8 8.6 1.8 5.2A2.9 2.9 0 0 1 7 3.4a2.9 2.9 0 0 1 5.2 1.8C12.2 8.6 7 12 7 12Z"/></svg>`;
+const BOOKMARK = `<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h6a1 1 0 0 1 1 1v9l-4-2.6L3 12V3a1 1 0 0 1 1-1Z" stroke-linejoin="round"/></svg>`;
+const BOOKMARK_ON = `<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor"><path d="M4 2h6a1 1 0 0 1 1 1v9l-4-2.6L3 12V3a1 1 0 0 1 1-1Z"/></svg>`;
+
+function fmt(n){ return n>=10000 ? (n/10000).toFixed(1)+"w" : n>=1000 ? (n/1000).toFixed(1)+"k" : String(n); }
+
+function cardHTML(p){
+  const img = p.images[0];
+  const ratio = img.aspect_ratio || (img.width/img.height) || 1;
+  const liked = p.is_liked;
+  return `<article class="card" data-id="${p.id}">
+    <div class="thumb" style="aspect-ratio:${ratio}">
+      <img src="${assetUrl(img.thumb_url)}" alt="" loading="lazy" onload="this.classList.add('ready')" />
+      ${p.post_type==="help"
+        ? `<span class="badge" style="background:rgba(224,80,60,.9)">求建议</span>`
+        : (badgeTag(p) ? `<span class="badge">#${badgeTag(p)}</span>` : "")}
+      ${p.is_favorited ? `<span class="badge saved">已收藏</span>` : ""}
+    </div>
+    <p class="ctext">${escapeHTML(p.title || p.text)}</p>
+    <div class="cfoot">
+      <img class="ava" data-author="${p.author.id}" src="${assetUrl(p.author.avatar_url)}" alt="" />
+      <span class="name" data-author="${p.author.id}">${escapeHTML(p.author.nickname)}</span>
+      <button class="likebtn ${liked?"on":""}" data-like="${p.id}" title="点赞">
+        ${liked?HEART_ON:HEART}<span data-cnt="${p.id}">${fmt(p.like_count)}</span>
+      </button>
+      <button class="likebtn favbtn ${p.is_favorited?"on":""}" data-bookmark="${p.id}" title="收藏">
+        ${p.is_favorited?BOOKMARK_ON:BOOKMARK}
+      </button>
+    </div>
+  </article>`;
+}
+
+// 筛选时角标显示命中的那个标签，否则显示作者设的主标签（tags[0]）
+function badgeTag(p){
+  if(S.tag && p.tags.includes(S.tag)) return S.tag;
+  return p.tags[0] || "";
+}
+
+function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* 图片地址必须跟页面同源：后端返回的 /assets/xxx 是根路径，页面若从
+   /static-html/<hash>/ 之类路径打开会 404；拼后端绝对地址又会跨域。
+   统一去掉开头的斜杠变成相对路径，让浏览器按当前页面所在目录解析：
+   - 从 8000 联调服务打开 -> /assets/xxx
+   - 从预览面板静态托管打开 -> /static-html/<hash>/assets/xxx
+   两种情况下 assets 目录都存在。 */
+function assetUrl(u){
+  if(!u) return "";
+  if(/^(https?:|data:|blob:)/i.test(u)) return u;
+  return String(u).replace(/^\/+/, "");
+}
+
+function appendItems(items){
+  ensureCols();
+  const estH = (p)=>{
+    const r = p.images[0].aspect_ratio || .75;
+    const cw = (gridEl.clientWidth || 900) / cols.length - 16;
+    return cw/r + 96;
+  };
+  items.forEach((p,i)=>{
+    let bi = 0;
+    for(let k=1;k<cols.length;k++) if((S._heights[k]||0) < (S._heights[bi]||0)) bi = k;
+    const div = document.createElement("div");
+    div.innerHTML = cardHTML(p);
+    const node = div.firstElementChild;
+    node.style.animationDelay = (i%6)*40 + "ms";
+    cols[bi].appendChild(node);
+    S._heights[bi] = (S._heights[bi]||0) + estH(p);
+  });
+}
+
+function clearFeed(){ ensureCols(); cols.forEach(c=>c.innerHTML=""); S._heights = cols.map(()=>0); }
+
+function skeletons(n=8){
+  clearFeed();
+  for(let i=0;i<n;i++){
+    const h = [230,290,250,310,240,280][i%6];
+    const d = document.createElement("div");
+    d.className="sk"; d.style.height = h+"px";
+    cols[i%cols.length].appendChild(d);
+    S._heights[i%cols.length] += h;
+  }
+}
+
+function showState(html){ stateEl.innerHTML = html; }
+
+/* ------------------------------ 请求 ------------------------------ */
+/* 所有接口都走这里：联调面板显示的就是"最近一次真实发出的请求"，
+   列表 / 详情 / 评论 / 匿名点赞 / 关注 都能被看到。 */
+function recordReq(method, path, url, extra={}){
+  S.lastReq = {
+    method, path, url,
+    headers: S.loggedIn ? {"Authorization":"Bearer dev-me"} : {},
+    ...extra,
+  };
+}
+
+async function request(method, path, opts={}){
+  const url = `${S.apiBase}/api/v1${path}`;
+  const headers = {};
+  if(S.loggedIn) headers["Authorization"] = "Bearer dev-me";
+  if(opts.body !== undefined) headers["Content-Type"] = "application/json";
+  const t0 = performance.now();
+  try{
+    const res = await fetch(url, {
+      method, headers,
+      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+    });
+    const body = await res.json();
+    recordReq(method, path, url, opts);
+    S.lastRes = {status:res.status, body, url};
+    S.mode = "live";
+    log(`${method} ${path} → ${res.status} ${body.code} · ${Math.round(performance.now()-t0)}ms`, res.ok?"ok":"err");
+    return body;
+  }catch(e){
+    await new Promise(r=>setTimeout(r, 220));
+    const body = opts.mock ? opts.mock() : mockFail(50001,"Mock 未实现该接口");
+    const status = body.code===0 ? 200 : (body.code===40101 ? 401 : (body.code===40401 ? 404 : 400));
+    recordReq(method, `(mock) ${path}`, url, opts);
+    S.lastRes = {status, body, url:`(mock) ${path}`};
+    S.mode = "mock";
+    log(`${method} ${path} → 本地 Mock ${body.code}`, "err");
+    return body;
+  }
+}
+
+async function apiFetch(q){
+  const body = await request("GET", `/posts?${qs(q)}`, {
+    q,
+    mock: () => (q.scope==="following" && !VIEWER_ID())
+      ? mockFail(40101,"登录后才能查看关注的人")
+      : mockListFeed(q, VIEWER_ID()),
+  });
+  return {status:S.lastRes.status, body, url:S.lastRes.url};
+}
+
+async function load(reset){
+  if(S.loading) return;
+  if(reset){ S.page=1; S.done=false; clearFeed(); showState(""); skeletons(6); }
+  if(S.done) return;
+
+  S.loading = true;
+  const q = buildQuery();
+  let result;
+  try{
+    result = await apiFetch(q);
+    S.mode = "live";
+  }catch(e){
+    // 后端没起：退回本地 Mock，行为与接口一致
+    await new Promise(r=>setTimeout(r, 320));
+    const body = (q.scope==="following" && !VIEWER_ID())
+      ? {code:40101, message:"登录后才能查看关注的人", data:null, requestId:"req_mock_401"}
+      : mockListFeed(q, VIEWER_ID());
+    result = {status: body.code===0?200:(body.code===40101?401:400), body, url:`(mock) /api/v1/posts?${qs(q)}`};
+    S.mode = "mock";
+    log(`后端未连接，使用本地 Mock：${q.sort}/${q.scope}`, "err");
+  }
+
+  S.lastRes = result;
+  S.loading = false;
+
+  if(reset) clearFeed();
+
+  if(result.body.code !== 0){
+    S.done = true;
+    if(reset) renderErrorState(result.body);
+    renderPanel();
+    return;
+  }
+
+  const data = result.body.data;
+  if(reset && data.list.length===0){ renderEmptyState(); }
+  appendItems(data.list);
+  S.items = reset ? data.list : S.items.concat(data.list);
+  S.page += 1;
+  S.done = !data.hasMore;
+  if(S.done && S.items.length) showState(`<div class="end">没有更多了 · 共 ${data.total} 条</div>`);
+  renderPanel();
+}
+
+function renderEmptyState(){
+  showState(`<div class="state">
+    <div class="t">这里还没有穿搭</div>
+    <div class="d">换个标签看看，或者成为第一个发帖的人。</div>
+    <button class="btn" id="resetTagBtn">查看全部</button>
+  </div>`);
+  const b = document.getElementById("resetTagBtn");
+  if(b) b.onclick = ()=>{
+    [...document.querySelectorAll(".chip")].forEach(x=>x.classList.remove("on"));
+    document.querySelector('.chip[data-tag=""]').classList.add("on");
+    S.tag = "";
+    load(true);
+  };
+}
+
+function renderErrorState(body){
+  if(body.code===40101){
+    showState(`<div class="state">
+      <div class="t">登录后查看关注的人</div>
+      <div class="d">关注流需要身份，后端返回 <code>40101</code>。<br/>前端按 4.4 先尝试一次自动刷新，失败再跳登录页。</div>
+      <button class="btn" id="loginNow">模拟登录</button>
+    </div>`);
+    const b = document.getElementById("loginNow");
+    if(b) b.onclick = ()=>{ setAuth(true); };
+  } else {
+    showState(`<div class="state"><div class="t">加载失败</div>
+      <div class="d">${escapeHTML(body.message)} · <code>${body.requestId||""}</code></div>
+      <button class="btn" onclick="load(true)">重试</button></div>`);
+  }
+}
+
+/* ------------------------------ 详情 / 评论 / 作者主页 ------------------------------ */
+const detailEl = document.getElementById("detail");
+const authorEl = document.getElementById("authorSheet");
+const dscroll = document.getElementById("dscroll");
+S.guestLiked = new Set();   // 游客点赞只在本次会话里变红，刷新即失效（纯匿名计数，不记身份）
+S.replyTo = null;
+S.comments = [];
+
+function relTime(str){
+  const h = (Date.now() - Date.parse(str)) / 3600e3;
+  if(h < 1) return Math.max(1, Math.round(h*60)) + " 分钟前";
+  if(h < 24) return Math.round(h) + " 小时前";
+  return Math.round(h/24) + " 天前";
+}
+
+async function openDetail(id){
+  const body = await request("GET", `/posts/${id}`, {mock:()=>mockGetPost(id,VIEWER_ID())});
+  if(body.code !== 0){ toast(body.message); return; }
+  S.detail = body.data;
+  renderDetail(body.data);
+  detailEl.hidden = false;
+  dscroll.scrollTop = 0;
+  renderPanel();
+
+  const cb = await request("GET", `/posts/${id}/comments`,
+                           {mock:()=>mockListComments(id,VIEWER_ID())});
+  S.comments = cb.code===0 ? cb.data.list : [];
+  renderComments(S.comments);
+  document.getElementById("cmtTotal").textContent = S.detail.comment_count;
+  renderPanel();
+}
+
+function renderDetail(p){
+  const img = p.images[0];
+  document.getElementById("dauthor").innerHTML = `
+    <img src="${assetUrl(p.author.avatar_url)}" alt="" data-author="${p.author.id}" />
+    <div class="an" data-author="${p.author.id}">
+      <b>${escapeHTML(p.author.nickname)}</b>
+      <small>${p.author.post_count} 篇笔记 · ${escapeHTML(p.author.bio||"")}</small>
+    </div>
+    <button class="follow ${p.author.is_following?"on":""}" id="dFollow">
+      ${p.author.is_following?"已关注":"+ 关注"}
+    </button>`;
+  document.getElementById("dFollow").onclick = (e)=>{
+    e.stopPropagation();
+    followAuthor(p.author.id, !p.author.is_following, (v)=>{
+      p.author.is_following = v;
+      const b = document.getElementById("dFollow");
+      b.className = "follow" + (v?" on":"");
+      b.textContent = v ? "已关注" : "+ 关注";
+    });
+  };
+  document.getElementById("dmedia").innerHTML =
+    `<img src="${assetUrl(img.url)}" alt="" style="aspect-ratio:${img.aspect_ratio}" />`;
+  document.getElementById("dtitle").textContent = p.title || "";
+  document.getElementById("dbody").textContent = p.text || "";
+  document.getElementById("helpline").style.display = p.post_type==="help" ? "block" : "none";
+  document.getElementById("dtags").innerHTML =
+    p.tags.map(t=>`<span>#${escapeHTML(t)}</span>`).join("");
+  document.getElementById("dtime").textContent = relTime(p.created_at) + " · 自然光实拍";
+  updateLikeBtn();
+  updateBookmarkBtn();
+  updateComposer();
+}
+
+function updateLikeBtn(){
+  if(!S.detail) return;
+  const p = S.detail;
+  const on = S.loggedIn ? p.is_liked : S.guestLiked.has(p.id);
+  const btn = document.getElementById("dLike");
+  btn.className = "dlike" + (on?" on":"");
+  btn.innerHTML = (on?HEART_ON:HEART) + `<span>${fmt(p.like_count)}</span>`;
+}
+
+function updateBookmarkBtn(){
+  if(!S.detail) return;
+  const p = S.detail;
+  const on = !!p.is_favorited;
+  const btn = document.getElementById("dBookmark");
+  btn.className = "dlike dfav" + (on?" on":"");
+  btn.innerHTML = (on?BOOKMARK_ON:BOOKMARK) + `<span>${on?"已收藏":"收藏"}</span>`;
+}
+
+function renderComments(list){
+  const el = document.getElementById("comments");
+  if(!list.length){ el.innerHTML = `<div class="noComments">还没有评论，来说第一句吧</div>`; return; }
+  el.innerHTML = list.map(c=>`
+    <div class="comment" data-comment="${c.id}">
+      <img src="${assetUrl(c.author.avatar_url)}" alt="" />
+      <div class="cbody">
+        <div class="cname">${escapeHTML(c.author.nickname)}${c.author.is_me?'<em>我</em>':''}</div>
+        ${c.reply_to ? `<div class="creply">回复 @${escapeHTML(c.reply_to.nickname)}：${escapeHTML(String(c.reply_to.text).slice(0,26))}…</div>` : ""}
+        <div class="ctext">${escapeHTML(c.text)}</div>
+        <div class="cmeta">${relTime(c.created_at)} · <span class="replyTo" data-id="${c.id}" data-name="${escapeHTML(c.author.nickname)}" style="cursor:pointer">回复</span></div>
+      </div>
+    </div>`).join("");
+  el.querySelectorAll(".replyTo").forEach(x=>{
+    x.onclick = ()=>{
+      if(!S.loggedIn){ setAuth(true,false); toast("已模拟登录，再点一次回复"); return; }
+      S.replyTo = x.dataset.id;
+      const input = document.getElementById("commentInput");
+      input.placeholder = `回复 @${x.dataset.name}…`;
+      input.focus();
+    };
+  });
+}
+
+function updateComposer(){
+  const input = document.getElementById("commentInput");
+  const btn = document.getElementById("sendComment");
+  if(S.loggedIn){
+    input.disabled = false;
+    input.placeholder = S.replyTo ? "写一句回复…" : "说点什么，友善一点～";
+    btn.textContent = "发送";
+    btn.classList.remove("guest");
+  }else{
+    input.disabled = true;
+    input.placeholder = "登录后才能评论…";
+    btn.textContent = "登录";
+    btn.classList.add("guest");
+  }
+}
+
+async function detailLike(){
+  const p = S.detail; if(!p) return;
+  if(S.loggedIn){
+    const next = !p.is_liked;
+    const body = await request(next?"PUT":"DELETE", `/posts/${p.id}/like`, {
+      mock:()=>mockOk({post_id:p.id, is_liked:next, like_count:p.like_count+(next?1:-1)}),
+    });
+    if(body.code===0){ p.is_liked = next; p.like_count = body.data.like_count; }
+    else toast(body.message);
+  }else{
+    // 游客：POST 纯计数，点一次加一次；不做身份去重，红心只在本会话点亮
+    const body = await request("POST", `/posts/${p.id}/like`, {mock:()=>mockLikeAnon(p.id)});
+    if(body.code===0){ p.like_count = body.data.like_count; S.guestLiked.add(p.id); toast("游客点赞成功 · 不记身份，可以再点"); }
+    else toast(body.message);
+  }
+  updateLikeBtn();
+  const it = S.items.find(x=>x.id===p.id);
+  if(it) it.like_count = p.like_count;
+  document.querySelectorAll(`[data-cnt="${p.id}"]`).forEach(el=>el.textContent=fmt(p.like_count));
+  renderPanel();
+}
+
+async function submitComment(){
+  if(!S.loggedIn){ setAuth(true,false); toast("已模拟登录，再点一次发送"); return; }
+  const input = document.getElementById("commentInput");
+  const text = (input.value||"").trim();
+  if(!text){ toast("先写点什么吧"); return; }
+  const body = await request("POST", `/posts/${S.detail.id}/comments`, {
+    body:{text, parent_id:S.replyTo || undefined},
+    mock:()=>mockAddComment(S.detail.id, text, VIEWER_ID(), S.replyTo),
+  });
+  if(body.code===0){
+    input.value = "";
+    S.replyTo = null;
+    updateComposer();
+    S.comments.push(body.data);
+    renderComments(S.comments);
+    S.detail.comment_count += 1;
+    document.getElementById("cmtTotal").textContent = S.detail.comment_count;
+    dscroll.scrollTop = dscroll.scrollHeight;
+    toast("评论发布成功 · 已通知作者");
+  }else toast(body.message);
+  renderPanel();
+}
+
+async function followAuthor(uid, follow, done){
+  if(!S.loggedIn){ setAuth(true,false); toast("已模拟登录，再点一次关注"); return; }
+  const body = await request(follow?"PUT":"DELETE", `/users/${uid}/follow`,
+                             {mock:()=>mockToggleFollow(uid,follow)});
+  if(body.code===0){
+    done && done(body.data.is_following);
+    const it = S.items.find(x=>x.author.id===uid);
+    if(it) it.author.is_following = follow;
+    toast(follow ? "已关注" : "已取消关注");
+  }else toast(body.message);
+  renderPanel();
+}
+
+async function openAuthor(uid){
+  const ub = await request("GET", `/users/${uid}`, {mock:()=>mockGetUser(uid,VIEWER_ID())});
+  if(ub.code!==0){ toast(ub.message); return; }
+  const pb = await request("GET", `/posts?authorId=${uid}&sort=newest&page=1&pageSize=20`, {
+    mock:()=>mockListFeed({page:1,pageSize:20,sort:"newest",scope:"all",authorId:uid},VIEWER_ID()),
+  });
+  renderPanel();
+  const u = ub.data;
+  document.getElementById("aprofile").innerHTML = `
+    <img src="${assetUrl(u.avatar_url)}" alt="" />
+    <div class="nm">${escapeHTML(u.nickname)}</div>
+    <div class="bio">${escapeHTML(u.bio||"")}</div>
+    <div class="nums">${u.post_count} 篇笔记 · ${u.follower_count} 粉丝</div>
+    <button class="followbtn ${u.is_following?"on":""}" id="aFollow">${u.is_following?"已关注":"+ 关注 TA"}</button>`;
+  document.getElementById("aFollow").onclick = (e)=>{
+    const b = e.currentTarget;
+    followAuthor(uid, !b.classList.contains("on"), (v)=>{
+      b.className = "followbtn" + (v?" on":"");
+      b.textContent = v ? "已关注" : "+ 关注 TA";
+    });
+  };
+  const list = pb.code===0 ? pb.data.list : [];
+  document.getElementById("agrid").innerHTML = list.map(p=>`
+    <div class="mini" data-post="${p.id}">
+      <img src="${assetUrl(p.images[0].thumb_url)}" alt="" />
+      <p>${escapeHTML(p.title)}</p>
+    </div>`).join("") || `<div class="noComments">TA 还没有发帖</div>`;
+  document.querySelectorAll("#agrid [data-post]").forEach(x=>{
+    x.onclick = ()=>{ authorEl.hidden = true; openDetail(x.dataset.post); };
+  });
+  authorEl.hidden = false;
+}
+
+document.getElementById("detailBack").onclick = ()=>{ detailEl.hidden = true; };
+document.getElementById("authorBack").onclick = ()=>{ authorEl.hidden = true; };
+document.getElementById("detailMore").onclick = ()=>toast("举报 / 收藏帖子：P1，本次未实现");
+document.getElementById("dLike").onclick = detailLike;
+document.getElementById("dBookmark").onclick = async ()=>{
+  const p = S.detail; if(!p) return;
+  if(!S.loggedIn){ setAuth(true,false); toast("已模拟登录，再点一次收藏"); return; }
+  const on = !p.is_favorited;
+  const body = await request(on?"PUT":"DELETE", `/posts/${p.id}/bookmark`, {
+    mock:()=>mockToggleBookmark(p.id, on),
+  });
+  if(body.code===0){
+    p.is_favorited = on;
+    const it = S.items.find(x=>x.id===p.id); if(it) it.is_favorited = on;
+    updateBookmarkBtn();
+    // 同步列表卡片上的收藏按钮与角标
+    document.querySelectorAll(`[data-bookmark="${p.id}"]`).forEach(b=>{
+      b.classList.toggle("on", on); b.innerHTML = on?BOOKMARK_ON:BOOKMARK;
+    });
+    toast(on ? "已收藏" : "已取消收藏");
+  }else toast(body.message);
+  renderPanel();
+};
+document.getElementById("sendComment").onclick = ()=>{
+  if(!S.loggedIn){ setAuth(true,false); toast("已模拟登录，再点一次发送"); return; }
+  submitComment();
+};
+document.getElementById("commentInput").addEventListener("keydown", e=>{
+  if(e.key==="Enter") submitComment();
+});
+
+/* ------------------------------ 交互 ------------------------------ */
+document.getElementById("tabs").addEventListener("click", e=>{
+  const t = e.target.closest(".tab"); if(!t) return;
+  [...document.querySelectorAll(".tab")].forEach(x=>x.classList.toggle("active", x===t));
+  S.tab = t.dataset.tab;
+  feed.scrollTop = 0;
+  load(true);
+});
+
+document.getElementById("chips").addEventListener("click", e=>{
+  const c = e.target.closest(".chip"); if(!c) return;
+  const same = c.classList.contains("on");
+  [...document.querySelectorAll(".chip")].forEach(x=>x.classList.remove("on"));
+  if(!same){ c.classList.add("on"); S.tag = c.dataset.tag; } else { S.tag=""; document.querySelector('.chip[data-tag=""]').classList.add("on"); }
+  feed.scrollTop = 0;
+  load(true);
+});
+
+document.querySelectorAll(".chip")[0].classList.add("on");
+
+// 列表交互：作者进主页 / 点赞（登录幂等、游客纯计数）/ 卡片进详情
+document.querySelector(".feed").addEventListener("click", async (e)=>{
+  const authorHit = e.target.closest("[data-author]");
+  if(authorHit){ e.stopPropagation(); openAuthor(authorHit.dataset.author); return; }
+
+  const like = e.target.closest("[data-like]");
+  if(like){
+    e.stopPropagation();
+    const id = like.dataset.like;
+    const base = S.items.find(x=>x.id===id);
+    let body;
+    if(S.loggedIn){
+      const on = !like.classList.contains("on");
+      like.classList.toggle("on", on);
+      like.classList.add("pop"); setTimeout(()=>like.classList.remove("pop"),180);
+      like.innerHTML = (on?HEART_ON:HEART) + `<span data-cnt="${id}"></span>`;
+      if(base) base.is_liked = on;
+      body = await request(on?"PUT":"DELETE", `/posts/${id}/like`, {
+        mock:()=>mockOk({post_id:id, is_liked:on,
+                         like_count:(base?base.like_count:0)+(on?1:-1)}),
+      });
+    }else{
+      body = await request("POST", `/posts/${id}/like`, {mock:()=>mockLikeAnon(id)});
+      like.classList.add("on");
+      like.innerHTML = HEART_ON + `<span data-cnt="${id}"></span>`;
+      S.guestLiked.add(id);
+      toast("游客点赞成功 · 不记身份");
+    }
+    if(body.code===0 && base){
+      base.like_count = body.data.like_count;
+      const cnt = like.querySelector("[data-cnt]");
+      if(cnt) cnt.textContent = fmt(base.like_count);
+    }
+    renderPanel();
+    return;
+  }
+
+  const fav = e.target.closest("[data-bookmark]");
+  if(fav){
+    e.stopPropagation();
+    if(!S.loggedIn){ setAuth(true,false); toast("已模拟登录，再点一次收藏"); return; }
+    const id = fav.dataset.bookmark;
+    const base = S.items.find(x=>x.id===id);
+    const on = !fav.classList.contains("on");
+    const body = await request(on?"PUT":"DELETE", `/posts/${id}/bookmark`, {
+      mock:()=>mockToggleBookmark(id, on),
+    });
+    if(body.code===0){
+      fav.classList.toggle("on", on);
+      fav.innerHTML = on?BOOKMARK_ON:BOOKMARK;
+      if(base) base.is_favorited = on;
+      const badge = fav.closest(".card")?.querySelector(".badge.saved");
+      if(badge) badge.remove();
+      if(on && fav.closest(".thumb")===null){
+        const thumb = fav.closest(".card")?.querySelector(".thumb");
+        if(thumb && !thumb.querySelector(".badge.saved")){
+          const s=document.createElement("span"); s.className="badge saved"; s.textContent="已收藏"; thumb.appendChild(s);
+        }
+      }
+      toast(on ? "已收藏" : "已取消收藏");
+    }else toast(body.message);
+    renderPanel();
+    return;
+  }
+
+  const card = e.target.closest(".card");
+  if(card) openDetail(card.dataset.id);
+});
+
+document.getElementById("searchBox").onclick = ()=>toast("跳转 /search?q=（P1，搜索页不在本次范围）");
+document.getElementById("msgBtn").onclick = ()=>toast("跳转 /notifications（P1）");
+document.querySelectorAll(".nav[data-toast]").forEach(b=>b.onclick=()=>toast(b.dataset.toast));
+
+let toastTimer;
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>toastEl.classList.remove("show"), 1900);
+}
+
+let userScrolled = false;
+window.addEventListener("wheel", ()=>{userScrolled=true}, {passive:true});
+window.addEventListener("touchmove", ()=>{userScrolled=true}, {passive:true});
+window.addEventListener("scroll", ()=>{
+  const bar = document.getElementById("topbar");
+  if(bar) bar.classList.toggle("scrolled", window.scrollY > 4);
+  // 只有用户真的滑过才预加载
+  if(userScrolled && window.scrollY + window.innerHeight > document.documentElement.scrollHeight - 700) load(false);
+}, {passive:true});
+// 列数随窗口宽度变化：重排已经加载的卡片，不重新请求
+window.addEventListener("resize", ()=>{
+  const before = cols.length;
+  ensureCols();
+  if(cols.length !== before && S.items.length){
+    cols.forEach(c=>c.innerHTML=""); S._heights = cols.map(()=>0);
+    appendItems(S.items);
+  }
+});
+
+// 首屏
+
+/* ------------------------------ 面板 ------------------------------ */
+const pbody = document.getElementById("pbody");
+document.getElementById("ptabs").addEventListener("click", e=>{
+  const t = e.target.closest(".ptab"); if(!t) return;
+  [...document.querySelectorAll(".ptab")].forEach(x=>x.classList.toggle("on", x===t));
+  S.panelTab = t.dataset.p;
+  renderPanel();
+});
+
+function highlightJSON(obj){
+  return escapeHTML(JSON.stringify(obj, null, 2))
+    .replace(/&quot;([^&]*?)&quot;(\s*:)/g, '<span class="k">&quot;$1&quot;</span>$2')
+    .replace(/:\s*&quot;([^&]*?)&quot;/g, ': <span class="s">&quot;$1&quot;</span>')
+    .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="n">$1</span>')
+    .replace(/:\s*(true|false|null)/g, ': <span class="b">$1</span>');
+}
+
+function renderPanel(){
+  document.getElementById("sourcePill").textContent = S.mode==="live" ? "实时接口" : "本地 Mock";
+  document.getElementById("sourcePill").className = "pill " + (S.mode==="live"?"ok":"");
+  const st = S.lastRes?.status;
+  const sp = document.getElementById("statusPill");
+  sp.textContent = st ? `${st} · ${S.lastRes.body.code}` : "—";
+  sp.className = "pill " + (st===200 ? "ok":"err");
+
+  // 最近一次真实发出的请求：列表 / 详情 / 评论 / 点赞 / 关注 都会记录
+  const req = S.lastReq || {};
+  if(S.panelTab==="req"){
+    const rows = [
+      [req.method || "GET", req.path || "/posts", true],
+      ["URL", req.url || "—", false],
+      ["Authorization", (req.headers && req.headers.Authorization) || "（无，游客态）", false],
+      ["viewer", VIEWER_ID() || "null", false],
+    ];
+    if(req.q){
+      Object.entries(req.q).forEach(([k,v])=>{
+        rows.push([k, (v===undefined||v===null||v==="") ? "—" : v, k==="sort"||k==="scope"]);
+      });
+    }
+    if(req.body) rows.push(["body", JSON.stringify(req.body), false]);
+    pbody.innerHTML = `<table class="kv">${rows.map(([k,v,hl])=>`<tr class="${hl?"hl":""}"><td>${k}</td><td>${escapeHTML(String(v))}</td></tr>`).join("")}</table>
+    <div class="hint">点卡片进详情、发评论、点赞、点头像进博主主页，这里会切到对应的真实请求。<br/>
+      关掉左下「登录态」再进关注流会看到 <code>40101</code>；游客点赞走 <code>POST /posts/:id/like</code>（纯计数），游客评论会被 <code>40101</code> 拦住。</div>`;
+  }
+
+  if(S.panelTab==="res"){
+    const body = S.lastRes ? S.lastRes.body : {code:0,message:"ok",data:null,requestId:"-"};
+    pbody.innerHTML = `<pre class="json">${highlightJSON(body)}</pre>
+      <div class="hint">响应是真实结构，未做删减：列表的 <code>hasMore</code> 供瀑布流判断到底，详情的 <code>title/text/post_type</code> 分别给大标题、正文和求助标记，评论的 <code>reply_to</code> 让「回复谁」不用再发一次请求。</div>`;
+  }
+
+  if(S.panelTab==="map"){
+    pbody.innerHTML = `
+    <table class="mapt">
+      <thead><tr><th style="width:118px">字段</th><th style="width:88px">页面元素</th><th>说明</th></tr></thead>
+      <tbody>
+      <tr><td><code>images[0].thumb_url</code></td><td>卡片封面</td><td>列表只加载缩略图；原图</td></tr>
+      <tr><td><code>images[0].aspect_ratio</code><span class="new">增补</span></td><td>封面高度</td><td>图片没回来前先按比例占位，避免瀑布流跳动</td></tr>
+      <tr><td><code>title</code><span class="new">增补</span></td><td>卡片标题</td><td>小红书式笔记标题，最多 2 行截断；详情页用大字号展示</td></tr>
+      <tr><td><code>post_type</code><span class="new">增补</span></td><td>求建议角标</td><td><code>help</code> 求助帖显示红色「求建议」；<code>outfit</code> 是穿搭推荐</td></tr>
+      <tr><td><code>text</code></td><td>详情正文</td><td>卡片不展示；详情页按原文换行渲染</td></tr>
+      <tr><td><code>author.avatar_url / nickname</code></td><td>底部作者行</td><td>头像 16px，昵称最多一行省略</td></tr>
+      <tr><td><code>author.is_following</code><span class="new">增补</span></td><td>作者行右侧</td><td>关注流里可直接显示状态，少一次请求</td></tr>
+      <tr><td><code>like_count</code> / <code>is_liked</code></td><td>红心 + 数字</td><td>状态由后端给，前端不自己算；点赞后以接口返回值为准</td></tr>
+      <tr><td><code>tags[]</code><span class="new">增补</span></td><td>封面左上角标签</td><td>同时是 <code>?tag=</code> 的筛选依据</td></tr>
+      <tr><td><code>is_favorited</code></td><td>封面右上角</td><td>已收藏角标，游客恒为 false</td></tr>
+      <tr><td><code>created_at</code></td><td>排序依据</td><td>只给 ISO 8601；卡片按小红书惯例不显示时间，详情页再展示相对时间</td></tr>
+      <tr><td><code>comment_count</code></td><td>详情评论区</td><td>发评论后同事务 +1；首页卡片不展示，避免信息过载</td></tr>
+      <tr><td><code>reply_to</code></td><td>回复引用</td><td>评论列表带上被回复者的昵称和原文片段</td></tr>
+      <tr><td><code>author.post_count</code></td><td>博主主页</td><td>点头像进入 TA 的其他笔记</td></tr>
+      </tbody>
+    </table>
+    <div class="hint">标「增补」的三个字段是相对对齐文档 5.4 示例新增的，需要按 0.1 的约定在群里说一声、同步改文档。</div>`;
+  }
+
+  if(S.panelTab==="layout"){
+    pbody.innerHTML = `<ol class="rules">
+      <li>双列瀑布流，列宽自适应，<b>列间距 9px</b>、左右边距 <b>10px</b>；卡片圆角 12px。</li>
+      <li>卡片顺序由后端定，前端<b>只按返回顺序依次放进较短的一列</b>，不重新排序——否则「推荐」的意图就丢了。</li>
+      <li>封面按 <code>aspect_ratio</code> 占位，图片懒加载 + 淡入，滚动时不跳版。</li>
+      <li>文案最多 2 行；作者行固定 24px 高，红心在右，保证卡片高度可预测。</li>
+      <li>顶部三段式：搜索（固定）→ 关注/推荐/最新（粘顶）→ 话题标签（横滑）。切 tab 与切标签都回到第一页。</li>
+      <li>滚动到距底 420px 预加载下一页，<code>hasMore=false</code> 时显示「没有更多了」。</li>
+      <li>关注流未登录：显示空态 + 登录引导，而不是白屏；错误文案带 <code>requestId</code> 方便排查。</li>
+      <li>点赞乐观更新，接口返回的 <code>like_count</code> 为准；重复点击幂等，不会把赞数刷上去。</li>
+      <li>底部导航中间是发布（P0 发帖入口），衣橱/我的走各自页面。</li>
+      <li>点卡片进详情：标题大字号、正文保留换行、求助帖显示「求建议」；点头像进博主主页看 TA 的笔记。</li>
+      <li>评论必须登录：未登录时输入框禁用，点击「登录」模拟登录后才能发送；回复会带 <code>parent_id</code>。</li>
+      <li>点赞分两路：登录用户 <code>PUT/DELETE</code> 幂等并保留红心状态；游客 <code>POST</code> 纯计数，点一次加一次，不记身份。</li>
+    </ol>
+    <div class="hint">尺寸按 390pt 宽设计；实际前端用 TDesign Mobile 的栅格时，列宽 = (屏宽 - 20 - 9) / 2。</div>`;
+  }
+}
+
+/* 登录态开关 */
+const authSwitch = document.getElementById("authSwitch");
+const authLabel = document.getElementById("authLabel");
+function setAuth(v, reload=true){
+  S.loggedIn = v;
+  authSwitch.classList.toggle("on", v);
+  authLabel.textContent = v ? "u_me（已登录）" : "游客（未登录）";
+  document.getElementById("authSwitchPanel").classList.toggle("on", v);
+  document.getElementById("authLabelPanel").textContent = authLabel.textContent;
+  log(`切换登录态 → ${v?"u_me":"游客"}`, "ok");
+  updateComposer();
+  updateLikeBtn();
+  if(reload) load(true); else renderPanel();
+}
+authSwitch.onclick = ()=>setAuth(!S.loggedIn);
+document.getElementById("authSwitchPanel").onclick = ()=>setAuth(!S.loggedIn);
+document.getElementById("panelToggle").onclick = ()=>document.body.classList.toggle("panel-collapsed");
+if(window.innerWidth < 1180) document.body.classList.add("panel-collapsed");
+
+document.getElementById("retryBtn").onclick = ()=>{
+  S.apiBase = document.getElementById("apiBase").value.replace(/\/+$/,"") || "http://127.0.0.1:8000";
+  load(true);
+};
+document.getElementById("apiBase").addEventListener("keydown", e=>{ if(e.key==="Enter") document.getElementById("retryBtn").click(); });
+
+function log(msg, cls){
+  const t = new Date().toLocaleTimeString("zh-CN",{hour12:false});
+  S.logs.unshift(`<div><span class="${cls||""}">${t}</span> ${escapeHTML(msg)}</div>`);
+  S.logs = S.logs.slice(0,20);
+  document.getElementById("log").innerHTML = S.logs.join("");
+}
+
+/* 支持用 URL 预置状态，方便截图和给同学发"复现链接"：
+   ?auth=guest            游客态
+   ?tab=following|newest  直接进某个 tab
+   ?tag=通勤              预选标签
+   ?api=http://host:port  指定后端地址（为空则纯 Mock） */
+(function initFromURL(){
+  const p = new URLSearchParams(location.search);
+  if(p.get("api") !== null){
+    S.apiBase = (p.get("api") || "").replace(/\/+$/,"");
+    document.getElementById("apiBase").value = S.apiBase;
+  }
+  if(p.get("auth") === "guest"){
+    S.loggedIn = false;
+    authSwitch.classList.remove("on"); authLabel.textContent = "游客（未登录）";
+    document.getElementById("authSwitchPanel").classList.remove("on");
+    document.getElementById("authLabelPanel").textContent = "游客（未登录）";
+  }
+  const tab = p.get("tab");
+  if(tab && ["hot","newest","following"].includes(tab)){
+    S.tab = tab;
+    [...document.querySelectorAll(".tab")].forEach(x=>x.classList.toggle("active", x.dataset.tab===tab));
+  }
+  const tag = p.get("tag");
+  if(tag){
+    S.tag = tag;
+    [...document.querySelectorAll(".chip")].forEach(x=>x.classList.toggle("on", x.dataset.tag===tag));
+  }
+  // 复现链接：?post=post_1 打开详情；?author=u_1 打开博主主页
+  if(p.get("post")) setTimeout(()=>{
+    openDetail(p.get("post")).then(()=>{
+      if(p.get("scroll")==="comments") setTimeout(()=>{
+        const el = document.getElementById("comments");
+        if(el){ const r=document.getElementById("dright"); r.scrollTop = el.getBoundingClientRect().top - r.getBoundingClientRect().top + r.scrollTop - 12; }
+      }, 120);
+    });
+  }, 350);
+  if(p.get("author")) setTimeout(()=>openAuthor(p.get("author")), 350);
+})();
+
+renderPanel();
+skeletons(8);
+load(true);
+
+
+/* 网站弹窗：打开详情/作者主页时锁住背景滚动，关闭时恢复 */
+(function(){
+  const syncLock = ()=>{
+    const open = !document.getElementById("detail").hidden || !document.getElementById("authorSheet").hidden;
+    document.body.style.overflow = open ? "hidden" : "";
+  };
+  ["detail","authorSheet"].forEach(id=>{
+    const el = document.getElementById(id);
+    new MutationObserver(syncLock).observe(el, {attributes:true, attributeFilter:["hidden"]});
+  });
+  // 点遮罩关闭：检测点击位置是否在弹窗卡片外
+  [document.getElementById("detail"), document.getElementById("authorSheet")].forEach(mask=>{
+    mask.addEventListener("click", e=>{ if(e.target === mask) mask.hidden = true; });
+  });
+  document.addEventListener("keydown", e=>{
+    if(e.key === "Escape"){
+      document.getElementById("detail").hidden = true;
+      document.getElementById("authorSheet").hidden = true;
+    }
+  });
+})();
+
+</script>
+</body>
+</html>

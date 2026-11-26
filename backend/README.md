@@ -1,6 +1,6 @@
 # 衣搭后端
 
-衣搭后端采用 FastAPI、SQLAlchemy 2 和 SQLite。当前实现聚焦“我的衣橱”模块，并提供仅用于本地开发的调试网页。
+衣搭后端采用 FastAPI、SQLAlchemy 2 和 SQLite。公共 FastAPI 应用当前接入衣橱与社区模块；推荐模块保留自己的联调工具，后续按统一接口接入。
 
 ## 多人协作目录约定
 
@@ -13,6 +13,12 @@
 - `requirements.txt`、`.env.example`：全后端共用，不在模块目录再建一份。
 
 账号、社区、推荐功能应分别新增 `modules/account/`、`modules/community/`、`modules/recommendation/`，不要再创建新的 `main.py`、数据库连接或独立 FastAPI 服务。修改 `app/api.py`、`app/core/`、依赖清单或数据库迁移前，需要先和相关负责人同步。
+
+## 已接入模块
+
+- `app/modules/wardrobe/`：衣物上传、识别、分类、编辑、心愿衣橱和权限控制。
+- `app/modules/community/`：信息流、帖子详情、评论、点赞、收藏和关注，已经注册到公共 FastAPI 入口。
+- `recommendation/`：推荐服务的联调实现、真实天气、规则推荐与课程测试集。运行方法见 [recommendation/README.md](recommendation/README.md)，商品图片使用范围见 [recommendation/fixtures/garment/README.md](recommendation/fixtures/garment/README.md)。
 
 ## 本地启动
 

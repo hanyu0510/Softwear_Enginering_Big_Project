@@ -15,7 +15,23 @@ class ApiError(Exception):
         self.code = code
         self.message = message
         self.status_code = status_code
+        self.status = status_code
         super().__init__(message)
+
+    def __repr__(self) -> str:
+        return f"ApiError(code={self.code}, status={self.status_code}, message={self.message!r})"
+
+
+def bad_request(message: str) -> ApiError:
+    return ApiError(40001, message, 400)
+
+
+def unauthorized(message: str = "未登录或登录已过期") -> ApiError:
+    return ApiError(40101, message, 401)
+
+
+def not_found(message: str = "资源不存在或不可见") -> ApiError:
+    return ApiError(40401, message, 404)
 
 
 def request_id(request: Request) -> str:
