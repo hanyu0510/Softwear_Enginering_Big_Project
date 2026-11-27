@@ -1,242 +1,97 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import loginHero from '../assets/auth/login.png'
-import registerHero from '../assets/auth/register.png'
+import { computed, nextTick, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { login, register, resetPassword, session } from '../api/session'
+import { describeError } from '../api/http'
+import { validEmail } from '../api/validation'
+import { notify } from '../composables/useFeedback'
+import AppButton from './AppButton.vue'
+import AppIcon from './AppIcon.vue'
+import loginPhoto from '../assets/auth/login.png'
+import registerPhoto from '../assets/auth/register.png'
 
-const props = defineProps({
-  mode: { type: String, required: true },
-})
+const props = defineProps({ mode: { type: String, required: true } })
+const route = useRoute()
 const router = useRouter()
-const form = reactive({})
-const visiblePasswords = reactive({})
-const message = ref('')
-
-const phone = { key: 'phone', label: '请输入手机号', type: 'tel', icon: 'mobile', autocomplete: 'tel' }
-const password = { key: 'password', label: '请输入密码', type: 'password', icon: 'lock-on', autocomplete: 'current-password' }
-const confirmation = { ...password, key: 'confirmation', label: '请再次输入密码', autocomplete: 'new-password' }
-
-const fields = computed(() => ({
-  login: [
-    { key: 'account', label: '请输入手机号或邮箱', type: 'text', icon: 'mail', autocomplete: 'username' },
-    password,
-  ],
-  register: [
-    { key: 'nickname', label: '请输入昵称', type: 'text', icon: 'user', autocomplete: 'nickname' },
-    phone,
-    { ...password, label: '设置登录密码', autocomplete: 'new-password' },
-    confirmation,
-  ],
-  reset: [
-    phone,
-    { ...password, label: '设置新密码', autocomplete: 'new-password' },
-    { ...confirmation, label: '请再次确认新密码' },
-  ],
-}[props.mode]))
-
-const action = computed(() => ({
-  login: '登录',
-  register: '创建账号',
-  reset: '重置密码',
-}[props.mode]))
-
-function validPhone() {
-  return /^1[3-9]\d{9}$/.test(form.phone?.trim() ?? '')
+const modes = {
+  login: { title: '欢迎回来', hint: '登录后继续整理衣橱、探索搭配。', submit: '登录' },
+  register: { title: '创建账号', hint: '创建你的个人衣橱。', submit: '创建账号' },
+  reset: { title: '重置密码', hint: '填写账号邮箱和新密码。', submit: '重置密码' },
 }
+const mode = computed(() => modes[props.mode])
+const isLogin = computed(() => props.mode === 'login')
+const data = reactive({ email: typeof route.query.email === 'string' ? route.query.email : '', nickname: '', password: '', confirmation: '' })
+const errors = reactive({})
+const show = reactive({ password: false, confirmation: false })
+const form = ref()
+const busy = ref(false)
+const message = ref('')
+const fields = computed(() => [
+  ...(props.mode === 'register' ? [{ id: 'nickname', label: '昵称', type: 'text', max: 30, autocomplete: 'nickname' }] : []),
+  { id: 'email', label: '邮箱', type: 'email', max: 254, autocomplete: isLogin.value ? 'username' : 'email', placeholder: 'name@example.com' },
+  { id: 'password', label: isLogin.value ? '密码' : '新密码', type: 'password', max: 128, autocomplete: isLogin.value ? 'current-password' : 'new-password', placeholder: isLogin.value ? '输入密码' : '至少 8 个字符' },
+  ...(!isLogin.value ? [{ id: 'confirmation', label: '确认密码', type: 'password', max: 128, autocomplete: 'new-password' }] : []),
+])
 
-function submit() {
+async function submit() {
+  const email = data.email.trim().toLowerCase()
+  const nickname = data.nickname.trim()
   message.value = ''
-  if (props.mode === 'login') {
-    router.push('/home')
-    return
-  }
-  if (!validPhone()) {
-    message.value = '请输入有效的手机号。'
-    return
-  }
-  if (form.password !== form.confirmation) {
-    message.value = '两次输入的密码不一致。'
-    return
-  }
-  message.value = props.mode === 'register'
-    ? '注册表单验证通过。你可以返回登录页继续演示。'
-    : '重置密码表单验证通过。你可以返回登录页继续演示。'
+  errors.nickname = props.mode === 'register' && !nickname ? '请输入昵称。' : ''
+  errors.email = validEmail(email) ? '' : '请输入有效的邮箱地址。'
+  const length = Array.from(data.password).length
+  errors.password = length >= (isLogin.value ? 1 : 8) && length <= 128 ? '' : isLogin.value ? '请输入密码。' : '请输入 8 至 128 个字符。'
+  errors.confirmation = !isLogin.value && data.password !== data.confirmation ? '两次密码不一致。' : ''
+  const first = fields.value.find(field => errors[field.id])
+  if (first) { await nextTick(); form.value.elements.namedItem(first.id)?.focus(); return }
+  busy.value = true
+  try {
+    const next = typeof route.query.next === 'string' && router.resolve(route.query.next).meta.private ? route.query.next : '/home'
+    if (isLogin.value) {
+      await login({ email, password: data.password })
+      await router.replace(next)
+    } else {
+      if (props.mode === 'register') await register({ email, nickname, password: data.password })
+      else await resetPassword({ email, newPassword: data.password })
+      notify(props.mode === 'register' ? '账号已创建，请登录' : '密码已重置，请重新登录')
+      await router.replace({ path: '/login', query: { email, next } })
+    }
+  } catch (error) {
+    if (error.kind !== 'stale') message.value = describeError(error)
+  } finally { busy.value = false }
 }
 </script>
 
 <template>
-  <section class="auth" :class="'auth--' + mode" :aria-label="action">
-    <header v-if="mode !== 'reset'" class="hero">
-      <img :src="mode === 'login' ? loginHero : registerHero" alt="" />
-      <div class="wordmark">
-        <h1>衣搭</h1>
-        <span>YIDA</span>
-        <p>{{ mode === 'login' ? '发现更好的穿搭灵感' : '用穿搭记录生活' }}</p>
-      </div>
-    </header>
-    <header v-else class="reset-heading">
-      <RouterLink class="back" to="/login" aria-label="返回登录">←</RouterLink>
-      <h1>重置密码</h1>
-      <p>填写手机号并设置新的登录密码</p>
-    </header>
-
-    <form class="panel" @submit.prevent="submit">
-      <div v-for="field in fields" :key="field.key" class="field">
-        <t-icon :name="field.icon" aria-hidden="true" />
-        <input
-          v-model="form[field.key]"
-          :type="visiblePasswords[field.key] ? 'text' : field.type"
-          :placeholder="field.label"
-          :aria-label="field.label"
-          :autocomplete="field.autocomplete"
-          :minlength="mode !== 'login' && field.type === 'password' ? 6 : undefined"
-          required
-        />
-        <button
-          v-if="field.type === 'password'"
-          type="button"
-          class="visibility"
-          :aria-label="visiblePasswords[field.key] ? '隐藏密码' : '显示密码'"
-          @click="visiblePasswords[field.key] = !visiblePasswords[field.key]"
-        >
-          <t-icon :name="visiblePasswords[field.key] ? 'browse' : 'browse-off'" />
-        </button>
-      </div>
-
-      <label v-if="mode === 'register'" class="agreement">
-        <input type="checkbox" required />
-        <span>我已阅读并同意 <strong>《衣搭用户协议》</strong>和<strong>《隐私政策》</strong></span>
-      </label>
-
-      <button class="submit" type="submit">{{ action }}</button>
-      <p v-if="message" class="message" role="status">{{ message }}</p>
-
-      <nav v-if="mode === 'login'" class="auth-links" aria-label="账号帮助">
-        <RouterLink to="/register">注册新账号</RouterLink>
-        <RouterLink to="/forgot-password">忘记密码？</RouterLink>
+  <section class="auth-layout">
+    <figure :class="['auth-photo', { register: !isLogin }]"><img :src="isLogin ? loginPhoto : registerPhoto" alt="" fetchpriority="high"></figure>
+    <div class="auth-panel">
+      <div class="page-lead"><h1 class="display">{{ mode.title }}</h1><p class="body-small muted">{{ mode.hint }}</p></div>
+      <p v-if="route.query.expired" class="notice is-warning" role="status">会话已过期，请重新登录。</p>
+      <p v-else-if="session.message" class="notice is-warning" role="status">{{ session.message }}</p>
+      <form ref="form" class="auth-form stack" novalidate @submit.prevent="submit">
+        <div v-for="field in fields" :key="field.id" class="field">
+          <label :for="field.id">{{ field.label }}</label>
+          <div :class="{ 'field-with-action': field.type === 'password' }">
+            <input class="control" v-model="data[field.id]" :id="field.id" :name="field.id" :type="show[field.id] ? 'text' : field.type"
+              :maxlength="field.max" :autocomplete="field.autocomplete" :placeholder="field.placeholder" required
+              :aria-invalid="!!errors[field.id]" :aria-describedby="errors[field.id] ? field.id + '-error' : undefined" @input="errors[field.id] = ''">
+            <button v-if="field.type === 'password'" type="button" class="icon-button" :aria-label="show[field.id] ? '隐藏' + field.label : '显示' + field.label" @click="show[field.id] = !show[field.id]">
+              <AppIcon :name="show[field.id] ? 'eyeOff' : 'eye'" />
+            </button>
+          </div>
+          <p v-if="errors[field.id]" :id="field.id + '-error'" class="form-error">{{ errors[field.id] }}</p>
+        </div>
+        <p v-if="message" class="notice is-error wrap" role="alert">{{ message }}</p>
+        <AppButton type="submit" class="full" :busy="busy">{{ mode.submit }}</AppButton>
+      </form>
+      <nav class="auth-links" aria-label="账号导航">
+        <template v-if="isLogin">
+          <RouterLink class="text-button" :to="{path:'/register',query:{next:route.query.next}}">创建账号</RouterLink>
+          <RouterLink class="text-button" :to="{path:'/forgot-password',query:{next:route.query.next}}">忘记密码</RouterLink>
+        </template>
+        <RouterLink v-else class="text-button" :to="{path:'/login',query:{next:route.query.next}}">返回登录</RouterLink>
       </nav>
-      <nav v-else-if="mode === 'register'" class="auth-links">
-        <RouterLink to="/login">已有账号？返回登录</RouterLink>
-      </nav>
-    </form>
+    </div>
   </section>
 </template>
-
-<style scoped>
-.auth {
-  --accent: #ec7057;
-  --ink: #252522;
-  --paper: #faf7f2;
-  max-width: 440px;
-  min-height: 100dvh;
-  margin: auto;
-  background: var(--paper);
-  color: var(--ink);
-}
-
-.hero {
-  position: relative;
-  height: clamp(285px, 56svh, 510px);
-}
-
-.auth--register .hero {
-  height: clamp(205px, 32svh, 300px);
-}
-
-.hero img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 42%;
-}
-
-.wordmark {
-  position: absolute;
-  top: 19%;
-  left: 8%;
-}
-
-.wordmark h1,
-.wordmark span {
-  margin: 0;
-  font-family: "Songti SC", "Noto Serif SC", serif;
-  font-weight: 800;
-}
-
-.wordmark h1 { font-size: 44px; line-height: 1; }
-.wordmark span { letter-spacing: .24em; padding-left: 6px; }
-.wordmark p { margin: 16px 0 0; font-size: 14px; }
-.wordmark p::after {
-  content: '';
-  display: block;
-  width: 32px;
-  height: 3px;
-  margin-top: 14px;
-  background: var(--accent);
-}
-
-.panel {
-  position: relative;
-  margin-top: -20px;
-  padding: 36px 20px 28px;
-  border-radius: 24px 24px 0 0;
-  background: var(--paper);
-}
-
-.auth--register .panel { padding-top: 28px; }
-.auth--reset .panel { margin: 0; padding-top: 18px; }
-.reset-heading { position: relative; padding: 104px 20px 16px; text-align: center; }
-.reset-heading h1 { margin: 0; font-size: 28px; }
-.reset-heading p { color: #686662; font-size: 15px; }
-.back { position: absolute; top: 42px; left: 20px; font-size: 28px; }
-
-.field {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 50px;
-  padding: 0 13px;
-  margin-bottom: 13px;
-  border: 1px solid #e3ddd6;
-  border-radius: 15px;
-  font-size: 20px;
-}
-
-.field:focus-within { border-color: var(--accent); }
-.field input {
-  flex: 1;
-  width: 0;
-  min-width: 0;
-  border: 0;
-  outline: none;
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  font-size: 15px;
-}
-
-button { cursor: pointer; font: inherit; }
-.visibility { display: grid; place-items: center; padding: 5px; border: 0; background: none; color: inherit; }
-.agreement { display: flex; align-items: center; gap: 6px; margin-top: 22px; font-size: 12px; }
-.agreement input { accent-color: var(--accent); }
-.agreement strong { color: #b54430; }
-
-.submit {
-  width: 100%;
-  min-height: 50px;
-  margin-top: 20px;
-  border: 0;
-  border-radius: 999px;
-  background: linear-gradient(100deg, #e46548, var(--accent));
-  color: #fff;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.auth--reset .submit { margin-top: 48px; }
-.auth-links { display: flex; justify-content: center; margin-top: 24px; font-size: 14px; font-weight: 600; }
-a { color: inherit; text-decoration: none; }
-.auth-links a { padding: 0 18px; }
-.auth-links a + a { border-left: 1px solid #ded6ce; }
-.message { font-size: 14px; color: #95402d; }
-</style>
